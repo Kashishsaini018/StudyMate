@@ -1,4 +1,4 @@
-# StudyMate V1.4
+# StudyMate V1.5
 
 Mobile/PWA stability update.
 
@@ -6,3 +6,6 @@ Mobile/PWA stability update.
 - Removes the app-shell service worker from normal startup to avoid stale-cache/standalone launch problems.
 - Keeps the existing StudyMate test-analysis functionality.
 - PDF.js remains loaded from the existing CDN when a PDF test paper is used.
+
+
+V1.5 PWA stability update: relative manifest/start paths, unique PWA identity, and no service-worker file to avoid stale installed-app startup state.
