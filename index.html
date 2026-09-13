@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#111827" />
+  <title>StudyMate — NEET Test Analysis</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">StudyMate</div>
+      <nav>
+        <button class="nav-btn active" data-screen="home">Home</button>
+        <button class="nav-btn" data-screen="history">History</button>
+      </nav>
+    </header>
+
+    <main>
+      <section id="homeScreen" class="screen active">
+        <div class="hero">
+          <div>
+            <p class="eyebrow">NEET TEST ANALYSIS</p>
+            <h1>Understand where your marks are going.</h1>
+            <p class="muted">Analyse every question, track silly mistakes, revision needs and performance across tests.</p>
+          </div>
+          <div class="hero-actions"><button id="installBtn" class="secondary large hidden-install">Install App</button><button id="startBtn" class="primary large">Start New Test</button></div>
+        </div>
+
+        <div class="cards">
+          <div class="stat-card"><span>Tests Analysed</span><strong id="homeTests">0</strong></div>
+          <div class="stat-card"><span>Best Score</span><strong id="homeBest">—</strong></div>
+          <div class="stat-card"><span>Latest Score</span><strong id="homeLatest">—</strong></div>
+        </div>
+      </section>
+
+      <section id="historyScreen" class="screen">
+        <div class="section-head">
+          <div><p class="eyebrow">YOUR RECORD</p><h2>Test History</h2></div>
+          <button id="historyNewBtn" class="primary">New Test</button>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+
+      <section id="aboutScreen" class="screen">
+        <div class="section-head">
+          <div><p class="eyebrow">STEP 1</p><h2>About the Test</h2></div>
+          <span class="step">1 / 3</span>
+        </div>
+
+        <form id="aboutForm" class="panel">
+          <div class="field">
+            <label>Test Type</label>
+            <select id="testType" required>
+              <option value="">Select test type</option>
+              <option>Part Test</option>
+              <option>Mock Test</option>
+              <option>Full Syllabus</option>
+              <option>Chapter-wise</option>
+              <option>Subject-wise</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label>Test Name / Number</label>
+            <input id="testName" type="text" placeholder="e.g. Practice Test 03" required />
+          </div>
+
+          <div id="syllabusArea"></div>
+
+          <div class="field">
+            <label>Have you revised before the test?</label>
+            <div class="segmented">
+              <label><input type="radio" name="revised" value="Yes" required> Yes</label>
+              <label><input type="radio" name="revised" value="No"> No</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Do you want to upload the test paper PDF?</label>
+            <div class="segmented">
+              <label><input type="radio" name="usePdf" value="Yes" required> Yes</label>
+              <label><input type="radio" name="usePdf" value="No"> No</label>
+            </div>
+          </div>
+          <div id="pdfChoiceArea"></div>
+
+          <div class="actions">
+            <button type="button" class="secondary" data-screen="home">Cancel</button>
+            <button type="submit" class="primary">Continue to Analysis</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="analysisScreen" class="screen">
+        <div class="analysis-header">
+          <div>
+            <p class="eyebrow" id="sectionLabel">SECTION</p>
+            <h2 id="questionTitle">QUESTION 1 / 180</h2>
+          </div>
+          <button id="navigatorBtn" class="secondary">Question Navigator</button>
+        </div>
+
+        <div class="progress-wrap">
+          <div class="progress-bar"><div id="progressFill"></div></div>
+          <span id="progressText">1 / 180</span>
+        </div>
+
+        <div id="questionViewer" class="question-viewer">
+          <div class="viewer-placeholder">
+            <strong>Upload a PDF to begin.</strong>
+          </div>
+        </div>
+
+        <div class="panel analysis-panel">
+          <div class="status-options">
+            <label class="status-option"><input type="radio" name="status" value="Correct"><span>Correct</span></label>
+            <label class="status-option"><input type="radio" name="status" value="Incorrect"><span>Incorrect</span></label>
+            <label class="status-option"><input type="radio" name="status" value="Skipped"><span>Skipped</span></label>
+          </div>
+
+          <div id="questionExtra"></div>
+
+          <div class="actions between">
+            <button id="prevBtn" class="secondary">← Previous</button>
+            <button id="nextBtn" class="primary">Next →</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="summaryScreen" class="screen">
+        <div class="section-head">
+          <div><p class="eyebrow">READY TO SUBMIT</p><h2>Analysis Summary</h2></div>
+          <span class="step">3 / 3</span>
+        </div>
+        <div id="summaryContent" class="panel"></div>
+      </section>
+
+      <section id="resultScreen" class="screen">
+        <div id="resultContent"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="navigatorModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="section-head compact">
+        <div><p class="eyebrow">NAVIGATE</p><h3>Questions</h3></div>
+        <button id="closeNavigator" class="icon-btn">×</button>
+      </div>
+      <div id="questionGrid" class="question-grid"></div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="app.js?v=13"></script>
+  <script>if ("serviceWorker" in navigator) window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js"));</script>
+</body>
+</html>
