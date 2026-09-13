@@ -1,11 +1,12 @@
-# StudyMate V1.5
+# StudyMate V1.6
 
-Mobile/PWA stability update.
+Mobile-optimised NEET test-analysis app.
 
-- Uses explicit GitHub Pages paths (`/StudyMate/`) for manifest, icons, start URL and scope.
-- Removes the app-shell service worker from normal startup to avoid stale-cache/standalone launch problems.
-- Keeps the existing StudyMate test-analysis functionality.
-- PDF.js remains loaded from the existing CDN when a PDF test paper is used.
-
-
-V1.5 PWA stability update: relative manifest/start paths, unique PWA identity, and no service-worker file to avoid stale installed-app startup state.
+## V1.6 UI changes
+- Redesigned mobile-first Home screen based on the supplied reference design.
+- Removed the Install App button and browser install prompt from the UI.
+- Added compact Home/History navigation.
+- Added responsive hero card with analysis illustration and prominent Start New Test CTA.
+- Added stat cards and Quick Actions.
+- Preserved the existing test setup, PDF question rendering, analysis validation, result, and history functionality.
+- No service worker is required.

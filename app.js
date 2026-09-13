@@ -167,22 +167,6 @@ function refreshHome(){const h=JSON.parse(localStorage.getItem("studymate_histor
 function escapeHtml(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}function escapeAttr(s){return escapeHtml(s).replace(/`/g,"&#096;")}
 refreshHome();
 
-// PWA install prompt
-let deferredInstallPrompt = null;
-window.addEventListener('beforeinstallprompt', (event) => {
-  event.preventDefault();
-  deferredInstallPrompt = event;
-  const btn = $('installBtn');
-  if (btn) btn.style.display = 'inline-block';
-});
-if ($('installBtn')) $('installBtn').onclick = async () => {
-  if (!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  await deferredInstallPrompt.userChoice;
-  deferredInstallPrompt = null;
-  $('installBtn').style.display = 'none';
-};
-window.addEventListener('appinstalled', () => {
-  deferredInstallPrompt = null;
-  if ($('installBtn')) $('installBtn').style.display = 'none';
-});
+
+const quickAnalyseBtn = $("quickAnalyseBtn");
+if (quickAnalyseBtn) quickAnalyseBtn.onclick = () => { resetTest(); showScreen("about"); };
