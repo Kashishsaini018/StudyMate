@@ -6,10 +6,10 @@
   <meta name="theme-color" content="#ffffff" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>StudyMate — NEET Test Analysis</title>
-  <link rel="manifest" href="manifest.json?v=16" />
-  <link rel="icon" href="icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
-  <link rel="stylesheet" href="style.css?v=16" />
+  <link rel="manifest" href="manifest.json?v=18" />
+  <link rel="icon" href="icons/icon-192-v18.png?v=18" />
+  <link rel="apple-touch-icon" href="icons/icon-192-v18.png?v=18" />
+  <link rel="stylesheet" href="style.css?v=18" />
 </head>
 <body>
   <div id="app">
@@ -87,7 +87,7 @@
       </section>
 
       <section id="historyScreen" class="screen">
-        <div class="section-head"><div><p class="eyebrow">YOUR RECORD</p><h2>Test History</h2></div><button id="historyNewBtn" class="primary">New Test</button></div>
+        <div class="section-head"><div><p class="eyebrow">YOUR RECORD</p><h2>Test History</h2></div><div class="history-head-actions"><button id="clearHistoryBtn" class="danger">Clear History</button><button id="historyNewBtn" class="primary">New Test</button></div></div>
         <div id="historyList" class="history-list"></div>
       </section>
 
@@ -120,6 +120,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>if ("serviceWorker" in navigator) { navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(reg => reg.unregister())).catch(() => {}); }</script>
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>

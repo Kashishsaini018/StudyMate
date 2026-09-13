@@ -10,3 +10,6 @@ Mobile-optimised NEET test-analysis app.
 - Added stat cards and Quick Actions.
 - Preserved the existing test setup, PDF question rendering, analysis validation, result, and history functionality.
 - No service worker is required.
+
+
+V1.8: refreshed Android/PWA icon with cache-busted icon URLs and added Clear History action in the History screen.
