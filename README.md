@@ -1,15 +1,22 @@
-# StudyMate V1.6
+# StudyMate — Final V1
 
-Mobile-optimised NEET test-analysis app.
+Private, local-first NEET test analysis and practice PWA.
 
-## V1.6 UI changes
-- Redesigned mobile-first Home screen based on the supplied reference design.
-- Removed the Install App button and browser install prompt from the UI.
-- Added compact Home/History navigation.
-- Added responsive hero card with analysis illustration and prominent Start New Test CTA.
-- Added stat cards and Quick Actions.
-- Preserved the existing test setup, PDF question rendering, analysis validation, result, and history functionality.
-- No service worker is required.
+## Included
+- NEET 2027 syllabus from the supplied syllabus file
+- Test analysis with PDF/no-PDF flow
+- Coordinate/layout-aware PDF question mapping for two-column papers
+- Original PDF question crops with figures/graphs/equations preserved
+- Correct / Incorrect / Skipped analysis
+- Silly mistake + optional topic/reason logic
+- New Minimal + Illustration result/report-card UI
+- Reports and History
+- Practice from My Tests
+- PDF → interactive quiz
+- Mock-test builder with the four agreed level presets
+- App Lock with 4–6 digit passcode, 3 recovery questions and reset flow
 
+## Important
+The included mock-test question bank is a small offline starter bank. It is not presented as an official NEET question bank. For real question-paper practice, use Upload PDF → Quiz or add your own question bank.
 
-V1.8: refreshed Android/PWA icon with cache-busted icon URLs and added Clear History action in the History screen.
+PDF.js is loaded from cdnjs in `index.html`; the app therefore needs internet access for the PDF engine unless the PDF.js files are hosted locally.

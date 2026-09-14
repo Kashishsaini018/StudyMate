@@ -1,125 +1,83 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#ffffff" />
-  <meta name="mobile-web-app-capable" content="yes" />
-  <title>StudyMate — NEET Test Analysis</title>
-  <link rel="manifest" href="manifest.json?v=18" />
-  <link rel="icon" href="icons/icon-192-v18.png?v=18" />
-  <link rel="apple-touch-icon" href="icons/icon-192-v18.png?v=18" />
-  <link rel="stylesheet" href="style.css?v=18" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="mobile-web-app-capable" content="yes">
+<title>StudyMate — NEET Test Analysis</title>
+<link rel="manifest" href="manifest.json?v=final">
+<link rel="icon" href="icons/icon-192-v18.png">
+<link rel="stylesheet" href="style.css?v=final">
 </head>
 <body>
-  <div id="app">
-    <header class="topbar">
-      <div class="brand-wrap">
-        <img class="brand-logo" src="icons/studymate-logo.png" alt="StudyMate logo" />
-        <div class="brand-text">
-          <div class="brand">StudyMate</div>
-          <div class="brand-subtitle">NEET Test Analysis</div>
-        </div>
-      </div>
-      <nav class="top-nav" aria-label="Main navigation">
-        <button class="nav-btn active" data-screen="home" aria-label="Home">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.8 12 3l9 7.8v9.2a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/></svg>
-          <span>Home</span>
-        </button>
-        <button class="nav-btn" data-screen="history" aria-label="History">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6M3.5 5v5h5M12 7v5l3.5 2"/></svg>
-          <span>History</span>
-        </button>
-      </nav>
-    </header>
-
-    <main>
-      <section id="homeScreen" class="screen active">
-        <div class="home-hero">
-          <div class="hero-copy">
-            <p class="eyebrow accent-eyebrow">NEET TEST ANALYSIS</p>
-            <h1>Understand<br class="hero-break" /> where your<br class="hero-break" /> marks are going.</h1>
-            <p class="hero-description">Analyse every question, track silly mistakes, revision needs and performance across tests.</p>
-          </div>
-          <div class="hero-visual" aria-hidden="true">
-            <div class="report-art">
-              <div class="report-sheet">
-                <div class="art-line short"></div>
-                <div class="bars">
-                  <span class="bar b1"></span><span class="bar b2"></span><span class="bar b3"></span><span class="bar b4"></span>
-                </div>
-                <div class="art-line"></div><div class="art-line tiny"></div>
-              </div>
-              <div class="magnifier"><span></span></div>
-            </div>
-          </div>
-          <button id="startBtn" class="primary hero-cta">
-            <span class="cta-play">▶</span><span>Start New Test</span><span class="cta-arrow">›</span>
-          </button>
-          <div class="hero-quote"><span class="quote-mark">“</span><em>Progress is the sum of small efforts,<br class="quote-break" /> repeated day in and day out.</em></div>
-        </div>
-
-        <div class="stats-row">
-          <div class="stat-card stat-green">
-            <div class="stat-icon">▤</div><span>Tests<br class="mobile-only" /> Analysed</span><strong id="homeTests">0</strong>
-          </div>
-          <div class="stat-card stat-yellow">
-            <div class="stat-icon">♜</div><span>Best<br class="mobile-only" /> Score</span><strong id="homeBest">—</strong>
-          </div>
-          <div class="stat-card stat-purple">
-            <div class="stat-icon stat-bars">▮▮▮</div><span>Latest<br class="mobile-only" /> Score</span><strong id="homeLatest">—</strong>
-          </div>
-        </div>
-
-        <div class="quick-section">
-          <div class="quick-heading"><h2>Quick Actions</h2><span>Track · Analyse · Improve</span></div>
-          <div class="quick-grid">
-            <button class="quick-card quick-blue" data-screen="history">
-              <span class="quick-icon">▤</span><span class="quick-copy"><strong>View History</strong><small>See all your tests</small></span><b>›</b>
-            </button>
-            <button id="quickAnalyseBtn" class="quick-card quick-green">
-              <span class="quick-icon">▮▮▮</span><span class="quick-copy"><strong>Analyse Now</strong><small>Get detailed insights</small></span><b>›</b>
-            </button>
-          </div>
-        </div>
-
-        <div class="home-footer"><span>⌁</span> A better you, one test at a time.</div>
-      </section>
-
-      <section id="historyScreen" class="screen">
-        <div class="section-head"><div><p class="eyebrow">YOUR RECORD</p><h2>Test History</h2></div><div class="history-head-actions"><button id="clearHistoryBtn" class="danger">Clear History</button><button id="historyNewBtn" class="primary">New Test</button></div></div>
-        <div id="historyList" class="history-list"></div>
-      </section>
-
-      <section id="aboutScreen" class="screen">
-        <div class="section-head"><div><p class="eyebrow">STEP 1</p><h2>About the Test</h2></div><span class="step">1 / 3</span></div>
-        <form id="aboutForm" class="panel">
-          <div class="field"><label>Test Type</label><select id="testType" required><option value="">Select test type</option><option>Part Test</option><option>Mock Test</option><option>Full Syllabus</option><option>Chapter-wise</option><option>Subject-wise</option></select></div>
-          <div class="field"><label>Test Name / Number</label><input id="testName" type="text" placeholder="e.g. Practice Test 03" required /></div>
-          <div id="syllabusArea"></div>
-          <div class="field"><label>Have you revised before the test?</label><div class="segmented"><label><input type="radio" name="revised" value="Yes" required> Yes</label><label><input type="radio" name="revised" value="No"> No</label></div></div>
-          <div class="field"><label>Do you want to upload the test paper PDF?</label><div class="segmented"><label><input type="radio" name="usePdf" value="Yes" required> Yes</label><label><input type="radio" name="usePdf" value="No"> No</label></div></div>
-          <div id="pdfChoiceArea"></div>
-          <div class="actions"><button type="button" class="secondary" data-screen="home">Cancel</button><button type="submit" class="primary">Continue to Analysis</button></div>
-        </form>
-      </section>
-
-      <section id="analysisScreen" class="screen">
-        <div class="analysis-header"><div><p class="eyebrow" id="sectionLabel">SECTION</p><h2 id="questionTitle">QUESTION 1 / 180</h2></div><button id="navigatorBtn" class="secondary">Question Navigator</button></div>
-        <div class="progress-wrap"><div class="progress-bar"><div id="progressFill"></div></div><span id="progressText">1 / 180</span></div>
-        <div id="questionViewer" class="question-viewer"><div class="viewer-placeholder"><strong>Upload a PDF to begin.</strong></div></div>
-        <div class="panel analysis-panel"><div class="status-options"><label class="status-option"><input type="radio" name="status" value="Correct"><span>Correct</span></label><label class="status-option"><input type="radio" name="status" value="Incorrect"><span>Incorrect</span></label><label class="status-option"><input type="radio" name="status" value="Skipped"><span>Skipped</span></label></div><div id="questionExtra"></div><div class="actions between"><button id="prevBtn" class="secondary">← Previous</button><button id="nextBtn" class="primary">Next →</button></div></div>
-      </section>
-
-      <section id="summaryScreen" class="screen"><div class="section-head"><div><p class="eyebrow">READY TO SUBMIT</p><h2>Analysis Summary</h2></div><span class="step">3 / 3</span></div><div id="summaryContent" class="panel"></div></section>
-      <section id="resultScreen" class="screen"><div id="resultContent"></div></section>
-    </main>
+<div id="app">
+<header class="topbar">
+  <div class="brand-wrap"><img class="brand-logo" src="icons/studymate-logo.png" alt="StudyMate"><div><div class="brand">StudyMate</div><div class="brand-subtitle">Analyse. Practice. Improve.</div></div></div>
+  <nav class="top-nav">
+    <button class="nav-btn active" data-screen="home">⌂ <span>Home</span></button>
+    <button class="nav-btn" data-screen="practice">✦ <span>Practice</span></button>
+    <button class="nav-btn" data-screen="reports">◒ <span>Reports</span></button>
+    <button class="nav-btn" data-screen="history">◫ <span>History</span></button>
+    <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
+  </nav>
+</header>
+<main>
+<section id="homeScreen" class="screen active">
+  <div class="hero-card">
+    <div class="hero-copy"><span class="eyebrow">NEET TEST ANALYSIS</span><h1>Understand where your marks are going.</h1><p>Analyse every question, turn mistakes into practice, and see your progress clearly.</p><button id="startBtn" class="primary hero-btn">▶ Start New Test <b>›</b></button></div>
+    <div class="hero-art"><div class="art-paper"><span></span><span></span><i></i><i></i><i></i></div><div class="art-magnify">⌕</div><div class="art-star">✦</div></div>
   </div>
+  <div class="home-stats"><div><small>Tests Analysed</small><strong id="homeTests">0</strong></div><div><small>Best Score</small><strong id="homeBest">—</strong></div><div><small>Latest Score</small><strong id="homeLatest">—</strong></div></div>
+  <div class="section-title"><div><span class="eyebrow">QUICK ACTIONS</span><h2>Keep moving forward</h2></div></div>
+  <div class="quick-grid"><button class="quick-card blue" id="quickPractice"><b>✦</b><span><strong>Practice</strong><small>Build a focused mock test</small></span>›</button><button class="quick-card green" id="quickAnalyse"><b>◒</b><span><strong>Analyse a Test</strong><small>Find exactly what to improve</small></span>›</button></div>
+</section>
 
-  <div id="navigatorModal" class="modal hidden"><div class="modal-card"><div class="section-head compact"><div><p class="eyebrow">NAVIGATE</p><h3>Questions</h3></div><button id="closeNavigator" class="icon-btn">×</button></div><div id="questionGrid" class="question-grid"></div></div></div>
+<section id="practiceScreen" class="screen">
+  <div class="page-head"><div><span class="eyebrow">PRACTICE</span><h2>Turn analysis into improvement.</h2></div></div>
+  <div class="practice-grid">
+    <button class="feature-card" id="generateMock"><span>🎯</span><strong>Generate Mock Test</strong><small>Choose chapters, question count and source level.</small><b>→</b></button>
+    <button class="feature-card" id="uploadQuiz"><span>📄</span><strong>Upload PDF → Quiz</strong><small>Turn a question paper into an interactive quiz.</small><b>→</b></button>
+    <button class="feature-card wide" id="practiceMyTests"><span>⭐</span><strong>Practice from My Tests</strong><small>Reattempt incorrect, silly-mistake, skipped and weak-topic questions without changing the original result.</small><b>→</b></button>
+  </div>
+</section>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script>if ("serviceWorker" in navigator) { navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(reg => reg.unregister())).catch(() => {}); }</script>
-  <script src="app.js?v=18"></script>
+<section id="reportsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">REPORTS</span><h2>Your long-term performance.</h2></div></div><div id="reportsContent"></div></section>
+
+<section id="historyScreen" class="screen"><div class="page-head"><div><span class="eyebrow">YOUR RECORD</span><h2>Test History</h2></div><div><button id="clearHistoryBtn" class="danger">Clear History</button> <button id="historyNewBtn" class="primary">New Test</button></div></div><div id="historyList"></div></section>
+
+<section id="aboutScreen" class="screen">
+  <div class="page-head"><div><span class="eyebrow">STEP 1</span><h2>About the Test</h2></div><span class="pill">1 / 3</span></div>
+  <form id="aboutForm" class="panel">
+    <div class="field"><label>Test Type</label><select id="testType" required><option value="">Select test type</option><option>Part Test</option><option>Mock Test</option><option>Full Syllabus</option><option>Chapter-wise</option><option>Subject-wise</option></select></div>
+    <div class="field"><label>Test Name / Number</label><input id="testName" required placeholder="e.g. Practice Test 03"></div>
+    <div id="syllabusArea"></div>
+    <div class="field"><label>Revised before test?</label><div class="segmented"><label><input type="radio" name="revised" value="Yes" required> Yes</label><label><input type="radio" name="revised" value="No"> No</label></div></div>
+    <div class="field"><label>Do you want to upload the test paper PDF?</label><div class="segmented"><label><input type="radio" name="usePdf" value="Yes" required> Yes</label><label><input type="radio" name="usePdf" value="No"> No</label></div></div>
+    <div id="pdfChoiceArea"></div>
+    <div class="actions"><button type="button" class="secondary" data-screen="home">Cancel</button><button class="primary">Continue to Analysis →</button></div>
+  </form>
+</section>
+
+<section id="analysisScreen" class="screen">
+  <div class="analysis-top"><div><span class="eyebrow" id="sectionLabel">PHYSICS</span><h2 id="questionTitle">Question 1 / 180</h2></div><button id="navigatorBtn" class="secondary">▦ Question Map</button></div>
+  <div class="progress-wrap"><div class="progress-bar"><div id="progressFill"></div></div><span id="progressText">1 / 180</span></div>
+  <div class="question-card"><div id="questionViewer" class="question-viewer"></div><div class="answer-dock"><span class="dock-label">HOW DID YOU DO?</span><div class="status-options"><label><input type="radio" name="status" value="Correct"><span class="correct">✓<b>Correct</b></span></label><label><input type="radio" name="status" value="Incorrect"><span class="incorrect">×<b>Incorrect</b></span></label><label><input type="radio" name="status" value="Skipped"><span class="skipped">−<b>Skipped</b></span></label></div><div id="questionExtra"></div><div class="actions between"><button id="prevBtn" class="secondary">← Previous</button><button id="nextBtn" class="primary">Next →</button></div></div></div>
+</section>
+
+<section id="summaryScreen" class="screen"><div class="page-head"><div><span class="eyebrow">READY TO SUBMIT</span><h2>Final Check</h2></div><span class="pill">3 / 3</span></div><div id="summaryContent"></div></section>
+<section id="resultScreen" class="screen"><div id="resultContent"></div></section>
+<section id="settingsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">SETTINGS</span><h2>Security & Preferences</h2></div></div><div id="settingsContent"></div></section>
+</main>
+
+<div id="navigatorModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">NAVIGATE</span><h3>Question Map</h3></div><button class="icon-btn" id="closeNavigator">×</button></div><div id="questionGrid" class="question-grid"></div></div></div>
+<div id="mockModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">PRACTICE BUILDER</span><h3>Generate Mock Test</h3></div><button class="icon-btn close-modal">×</button></div><div id="mockBuilder"></div></div></div>
+<div id="pdfQuizModal" class="modal hidden"><div class="modal-card large-modal"><div class="modal-head"><div><span class="eyebrow">INTERACTIVE QUIZ</span><h3>Upload Question PDF</h3></div><button class="icon-btn close-modal">×</button></div><div id="pdfQuizBuilder"></div></div></div>
+<div id="practiceMyModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">PRACTICE FROM MY TESTS</span><h3>Choose what to reattempt</h3></div><button class="icon-btn close-modal">×</button></div><div id="practiceMyBuilder"></div></div></div>
+<div id="lockScreen" class="lock-screen hidden"><div class="lock-card"><div class="lock-logo">🔐</div><h2>StudyMate is Locked</h2><p>Enter your passcode to continue.</p><div id="lockBody"></div></div></div>
+<div id="toast" class="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
+<script src="app.js?v=final"></script>
 </body>
 </html>
