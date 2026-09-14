@@ -8,7 +8,7 @@
 <title>StudyMate — NEET Test Analysis</title>
 <link rel="manifest" href="manifest.json?v=final">
 <link rel="icon" href="icons/icon-192-v18.png">
-<link rel="stylesheet" href="style.css?v=final">
+<link rel="stylesheet" href="style.css?v=ux2">
 </head>
 <body>
 <div id="app">
@@ -38,7 +38,7 @@
   <div class="home-tile-grid">
     <button class="home-tile" data-screen="history"><span class="tile-icon purple">▤</span><strong>History</strong><small>View past tests</small><b>›</b></button>
     <button class="home-tile" data-screen="reports"><span class="tile-icon teal">▥</span><strong>Stats</strong><small>See your progress</small><b>›</b></button>
-    <button class="home-tile" id="homeSyllabus"><span class="tile-icon blue">▥</span><strong>Syllabus</strong><small>Track your preparation</small><b>›</b></button>
+    <button class="home-tile" id="homeSyllabus" data-screen="syllabus"><span class="tile-icon blue">▥</span><strong>Syllabus Tracker</strong><small>Track your preparation</small><b>›</b></button>
     <button class="home-tile" data-screen="reports"><span class="tile-icon orange">◔</span><strong>Reports</strong><small>Detailed analysis</small><b>›</b></button>
   </div>
   <div class="home-progress-card">
@@ -53,7 +53,7 @@
     <button class="home-quick" id="quickUpload"><span class="qicon blue">▧</span><span><strong>Upload PDF</strong><small>Turn your paper into an interactive quiz</small></span><b>›</b></button>
     <button class="home-quick" id="quickMyTests"><span class="qicon yellow">★</span><span><strong>Practice from My Tests</strong><small>Reattempt, improve, get stronger</small></span><b>›</b></button>
   </div>
-  <div class="home-bottom-grid"><button class="home-small-card"><span>▣</span><strong>Today's Goal</strong><small>Analyse. Revise. Improve.</small><b>›</b></button><button class="home-small-card"><span>◎</span><strong>NEET 2027</strong><small>Same Dream. Higher Focus.</small><b>›</b></button><div class="home-small-quote">“Progress is the sum of small efforts, repeated day in and day out.” <span>🌿</span></div></div>
+  <div class="home-bottom-grid"><button class="home-small-card" id="todoCard"><span>▣</span><strong>Today's To-Do</strong><small>Plan. Complete. Repeat.</small><b>›</b></button><button class="home-small-card" id="neetCard"><span>◎</span><strong>NEET 2027</strong><small>Same Dream. Higher Focus.</small><b>›</b></button><div class="home-small-quote">“Progress is the sum of small efforts, repeated day in and day out.” <span>🌿</span></div></div>
 </section>
 
 <section id="practiceScreen" class="screen">
@@ -66,6 +66,8 @@
 </section>
 
 <section id="reportsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">REPORTS</span><h2>Your long-term performance.</h2></div></div><div id="reportsContent"></div></section>
+<section id="syllabusScreen" class="screen"><div class="page-head"><div><span class="eyebrow">NEET 2027</span><h2>Syllabus Tracker</h2><div class="small-muted">Mark chapters as completed and keep your preparation visible.</div></div></div><div id="syllabusContent"></div></section>
+<section id="todoScreen" class="screen"><div class="page-head"><div><span class="eyebrow">DAILY PLANNER</span><h2>Today's To-Do</h2><div class="small-muted">Create, complete and manage your daily study tasks.</div></div></div><div id="todoContent"></div></section>
 
 <section id="historyScreen" class="screen"><div class="page-head"><div><span class="eyebrow">YOUR RECORD</span><h2>Test History</h2></div><div><button id="clearHistoryBtn" class="danger">Clear History</button> <button id="historyNewBtn" class="primary">New Test</button></div></div><div id="historyList"></div></section>
 
@@ -99,11 +101,12 @@
 <div id="practiceMyModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">PRACTICE FROM MY TESTS</span><h3>Choose what to reattempt</h3></div><button class="icon-btn close-modal">×</button></div><div id="practiceMyBuilder"></div></div></div>
 <div id="lockScreen" class="lock-screen hidden"><div class="lock-card"><div class="lock-logo">🔐</div><h2>StudyMate is Locked</h2><p>Enter your passcode to continue.</p><div id="lockBody"></div></div></div>
 
+<div id="motivationModal" class="modal hidden"><div class="modal-card motivation-card"><div class="modal-head"><div><span class="eyebrow">NEET 2027</span><h3>Keep Going 💙</h3></div><button class="icon-btn close-modal">×</button></div><div id="motivationContent"></div><div class="actions"><button class="primary" id="anotherMotivation">Another message ✨</button></div></div></div>
 <div id="nameModal" class="modal hidden"><div class="modal-card name-card"><div class="name-welcome">👋</div><h3>Welcome to StudyMate!</h3><p class="small-muted">What should we call you?</p><input id="nameInput" type="text" maxlength="32" placeholder="Enter your name" autocomplete="name"><div class="actions"><button id="saveNameBtn" class="primary">Continue →</button></div></div></div>
 <nav class="mobile-bottom-nav" id="mobileBottomNav"><button class="active" data-screen="home">⌂<span>Home</span></button><button data-screen="history">◷<span>History</span></button><button data-screen="reports">▥<span>Stats</span></button><button data-screen="settings">•••<span>More</span></button></nav>
 <div id="toast" class="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
-<script src="app.js?v=final"></script>
+<script src="app.js?v=ux2"></script>
 </body>
 </html>

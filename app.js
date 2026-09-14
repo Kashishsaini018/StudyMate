@@ -293,3 +293,132 @@ let lastHidden=0;document.addEventListener('visibilitychange',()=>{if(document.h
 $('saveNameBtn').onclick=()=>{const n=$('nameInput').value.trim().replace(/\s+/g,' ');if(!n)return toast('Please enter your name.');localStorage.setItem('studymate_user_name',n);$('nameModal').classList.add('hidden');refreshHome();toast(`Welcome to StudyMate, ${n}!`)};
 $('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('saveNameBtn').click()});
 refreshHome();renderReports();lockIfNeeded();setInterval(refreshHome,60000);setTimeout(ensureName,250);
+
+/* ===== FINAL UX PATCH 2: animations, syllabus tracker, daily to-do, NEET motivation ===== */
+const EXTRA_SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','syllabus','todo'];
+function showScreen(name){
+  EXTRA_SCREENS.forEach(s=>$(s+'Screen')?.classList.toggle('active',s===name));
+  document.querySelectorAll('.nav-btn,[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));
+  if(name==='home') refreshHome();
+  if(name==='history') renderHistory();
+  if(name==='reports') renderReports();
+  if(name==='settings') renderSettings();
+  if(name==='syllabus') renderSyllabusTracker();
+  if(name==='todo') renderTodo();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// Correct navigation for the newly interactive home cards.
+$('homeSyllabus')?.addEventListener('click',e=>{e.preventDefault();showScreen('syllabus')});
+$('todoCard')?.addEventListener('click',()=>showScreen('todo'));
+$('neetCard')?.addEventListener('click',()=>openMotivation());
+
+// Small appreciation after every answer-status selection.
+document.addEventListener('change',e=>{
+  if(e.target.name!=='status') return;
+  const q=state.questions[state.current];
+  const messages={
+    Correct:['🎉 Nice one!','Great! Keep that confidence going.'],
+    Incorrect:['💡 That’s okay!','Every mistake gives you something to improve.'],
+    Skipped:['🧠 No worries!','We’ll come back to this and turn it into a strength.']
+  };
+  const msg=messages[q.status];
+  const box=$('questionExtra');
+  if(box && msg){
+    let el=box.querySelector('.status-appreciation');
+    if(!el){el=document.createElement('div');el.className='status-appreciation';box.prepend(el)}
+    el.innerHTML=`<strong>${msg[0]}</strong><span>${msg[1]}</span>`;
+    el.classList.remove('appreciation-in'); void el.offsetWidth; el.classList.add('appreciation-in');
+  }
+  const selected=document.querySelector(`input[name="status"][value="${CSS.escape(q.status)}"]+span`);
+  if(selected){selected.classList.remove('selected-pop');void selected.offsetWidth;selected.classList.add('selected-pop')}
+});
+
+// Global touch/click feedback so cards and controls never feel static.
+document.addEventListener('click',e=>{
+  const btn=e.target.closest('button');
+  if(!btn || btn.disabled) return;
+  btn.classList.remove('tap-animate'); void btn.offsetWidth; btn.classList.add('tap-animate');
+  if(navigator.vibrate) try{navigator.vibrate(8)}catch{}
+},true);
+
+// ===== Syllabus Tracker =====
+const SYL_KEY='studymate_syllabus_tracker_v1';
+function getSyllabusTracker(){try{return JSON.parse(localStorage.getItem(SYL_KEY)||'{}')}catch{return{}}}
+function saveSyllabusTracker(x){localStorage.setItem(SYL_KEY,JSON.stringify(x))}
+function renderSyllabusTracker(){
+  const saved=getSyllabusTracker();
+  let total=0,done=0;
+  SUBJECTS.forEach(s=>SYLLABUS[s].forEach(c=>{total++;if(saved[`${s}::${c}`])done++}));
+  const overall=total?Math.round(done/total*100):0;
+  $('syllabusContent').innerHTML=`<div class="tracker-summary report-card"><div><span class="eyebrow">YOUR PREPARATION</span><h3>${overall}% Complete</h3><p class="small-muted">${done} of ${total} chapters completed</p></div><div class="tracker-ring" style="--pct:${overall}%"><strong>${overall}%</strong></div></div><div class="tracker-subject-tabs">${SUBJECTS.map((s,i)=>`<button type="button" class="tracker-tab ${i===0?'active':''}" data-tracker-sub="${s}">${s}</button>`).join('')}</div><div id="trackerPanels"></div>`;
+  const renderSubject=s=>{
+    const rows=SYLLABUS[s].map(c=>{const key=`${s}::${c}`,checked=!!getSyllabusTracker()[key];return `<label class="tracker-row ${checked?'done':''}"><input type="checkbox" data-track-key="${escapeHtml(key)}" ${checked?'checked':''}><span class="tracker-check">${checked?'✓':''}</span><span>${escapeHtml(c)}</span></label>`}).join('');
+    $('trackerPanels').innerHTML=`<div class="report-card tracker-card"><div class="tracker-head"><div><h3>${escapeHtml(s)}</h3><span class="small-muted">Tap a chapter when you have completed it.</span></div><button type="button" class="secondary" id="clearSubjectProgress">Reset ${escapeHtml(s)}</button></div><div class="tracker-list">${rows}</div></div>`;
+    $('trackerPanels').querySelectorAll('[data-track-key]').forEach(cb=>cb.onchange=()=>{const x=getSyllabusTracker();x[cb.dataset.trackKey]=cb.checked;saveSyllabusTracker(x);renderSyllabusTracker();setTimeout(()=>{document.querySelector(`[data-tracker-sub="${CSS.escape(s)}"]`)?.click()},0);toast(cb.checked?'Chapter marked complete ✓':'Chapter marked incomplete')});
+    $('clearSubjectProgress').onclick=()=>{const x=getSyllabusTracker();SYLLABUS[s].forEach(c=>delete x[`${s}::${c}`]);saveSyllabusTracker(x);renderSyllabusTracker();toast(`${s} progress reset.`)};
+  };
+  renderSubject('Physics');
+  document.querySelectorAll('[data-tracker-sub]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tracker-sub]').forEach(x=>x.classList.toggle('active',x===b));renderSubject(b.dataset.trackerSub);document.querySelectorAll('[data-tracker-sub]').forEach(x=>x.classList.toggle('active',x===b))});
+}
+
+// ===== Daily To-Do =====
+const TODO_KEY='studymate_todo_v1';
+function getTodos(){try{return JSON.parse(localStorage.getItem(TODO_KEY)||'[]')}catch{return[]}}
+function saveTodos(x){localStorage.setItem(TODO_KEY,JSON.stringify(x))}
+function renderTodo(){
+  const todos=getTodos();
+  const today=new Date().toISOString().slice(0,10);
+  const todays=todos.filter(t=>t.date===today);
+  const completed=todays.filter(t=>t.done).length;
+  $('todoContent').innerHTML=`<div class="todo-summary report-card"><div><span class="eyebrow">TODAY</span><h3>${completed}/${todays.length} tasks completed</h3><div class="barline"><i style="width:${todays.length?completed/todays.length*100:0}%"></i></div></div><span class="todo-emoji">🎯</span></div><form id="todoForm" class="todo-add report-card"><div><label for="todoInput">Add a task</label><input id="todoInput" type="text" maxlength="100" placeholder="e.g. Revise Kinematics for 45 minutes" required></div><button class="primary" type="submit">＋ Add Task</button></form><div class="report-card"><div class="tracker-head"><div><h3>Today’s Tasks</h3><span class="small-muted">Complete, edit or remove anything you add.</span></div><button type="button" class="secondary" id="clearDoneTodos">Clear completed</button></div><div class="todo-list">${todays.length?todays.map(t=>`<div class="todo-item ${t.done?'done':''}" data-todo-id="${t.id}"><button type="button" class="todo-check" data-todo-toggle="${t.id}">${t.done?'✓':''}</button><span class="todo-text">${escapeHtml(t.text)}</span><button type="button" class="todo-delete" data-todo-delete="${t.id}" aria-label="Delete">×</button></div>`).join(''):'<div class="empty">No tasks yet. Add your first task for today. 🌱</div>'}</div></div>`;
+  $('todoForm').onsubmit=e=>{e.preventDefault();const text=$('todoInput').value.trim();if(!text)return;const all=getTodos();all.unshift({id:uid(),text,date:today,done:false,createdAt:Date.now()});saveTodos(all);renderTodo();toast('Task added ✓')};
+  document.querySelectorAll('[data-todo-toggle]').forEach(b=>b.onclick=()=>{const all=getTodos(),t=all.find(x=>x.id===b.dataset.todoToggle);if(t)t.done=!t.done;saveTodos(all);renderTodo();toast(t?.done?'Task completed 🎉':'Task reopened')});
+  document.querySelectorAll('[data-todo-delete]').forEach(b=>b.onclick=()=>{saveTodos(getTodos().filter(x=>x.id!==b.dataset.todoDelete));renderTodo();toast('Task removed')});
+  $('clearDoneTodos').onclick=()=>{saveTodos(getTodos().filter(x=>!(x.date===today&&x.done)));renderTodo();toast('Completed tasks cleared')};
+}
+
+// ===== Rotating NEET 2027 motivation =====
+const NEET_MESSAGES=[
+  ['You can do it. 💙','The dream may feel far away today, but every chapter you finish is one step closer to the white coat. Keep going.'],
+  ['One day, you’ll thank yourself. 🌱','There will be a day when the long hours, missed comforts and difficult questions were all worth it. Don’t give up on that future you.'],
+  ['Your dream deserves your consistency. 🩺','You do not need a perfect day. You only need to keep showing up, even on the days when motivation is low.'],
+  ['For the version of you who is waiting. ❤️','Imagine opening your result and seeing the score you once thought was impossible. Keep studying for that person.'],
+  ['A bad test is not a bad future. 🌤️','Marks can fall. Confidence can shake. But neither decides where you finish. Learn, recover, and continue.'],
+  ['Keep going, future doctor. 🥹','Some days you will feel tired. Some days you will doubt yourself. That does not mean you are failing—it means you are human.'],
+  ['Small progress is still progress. ✨','One question. One revision. One chapter. One better test. These small things quietly build the future you want.'],
+  ['Your parents will see the journey. ❤️','Every early morning, every sacrifice and every difficult chapter is part of a story that will one day make you proud.'],
+  ['Don’t quit on your hardest day. 🔥','The hardest day is often the day when continuing matters most. Rest if you need to, then come back stronger.'],
+  ['NEET 2027 is a destination, not a deadline. 🎯','You are building your preparation one day at a time. Trust the process and keep moving forward.']
+];
+let motivationIndex=-1;
+function openMotivation(){
+  motivationIndex=(motivationIndex+1)%NEET_MESSAGES.length;
+  const [title,text]=NEET_MESSAGES[motivationIndex];
+  $('motivationContent').innerHTML=`<div class="motivation-art">🩺✨</div><h2 class="motivation-title">${escapeHtml(title)}</h2><p class="motivation-text">${escapeHtml(text)}</p><div class="motivation-footer">NEET 2027 • Keep believing in yourself.</div>`;
+  openModal('motivationModal');
+}
+$('anotherMotivation')?.addEventListener('click',openMotivation);
+
+// Home greeting: keep name small and use time-aware copy.
+function timeGreeting(){
+  const h=new Date().getHours();
+  if(h<5)return ['Good Night','Rest well. Tomorrow is another chance to get closer. 🌙'];
+  if(h<12)return ['Good Morning','Start strong. One focused session at a time. ☀️'];
+  if(h<17)return ['Good Afternoon','Keep your momentum going. You are still one step closer. 💙'];
+  if(h<21)return ['Good Evening','Still one step closer to your dream. ✨'];
+  return ['Good Night','Be proud of today, then come back stronger tomorrow. 🌙'];
+}
+function refreshHome(){
+  const h=getHistory(),name=getUserName(),doctor=shouldShowDoctor(h),g=timeGreeting();
+  $('homeTests').textContent=h.length;$('homeBest').textContent=h.length?Math.max(...h.map(x=>x.result.total)):'—';$('homeLatest').textContent=h.length?h[0].result.total:'—';
+  $('greetingTitle').innerHTML=`${escapeHtml(g[0])}${name?`, <span class="home-name">${doctor?'Dr. ':''}${escapeHtml(name)}</span>`:'!'}`;
+  $('greetingSub').textContent=doctor?'Five consecutive 600+ tests. Keep going, Doctor! 🩺':g[1];
+  const latest=h[0]?.result?.total||0,pct=Math.min(100,Math.round(latest/7.2));$('homeProgressPct').textContent=h.length?`${pct}%`:'0%';
+  $('progressLine1').textContent=h.length?(doctor?'600+ streak achieved.':'Your latest score is '+latest+'.'):'Start your first test.';$('progressLine2').textContent=h.length?'Analyse. Revise. Improve. Repeat.':'Every analysed test brings you closer.';
+  const ach=$('achievementCard');if(doctor){ach.classList.remove('hidden');ach.innerHTML=`<div class="achievement-title">🏆 ACHIEVEMENT UNLOCKED</div><strong>🩺 Dr. ${escapeHtml(name)} — 600+ Excellence Streak</strong><p>600+ in each of your last 5 tests. “Consistency turns preparation into success.”</p>`}else ach.classList.add('hidden');
+  const pctStyle=$('homeProgressPct')?.parentElement;if(pctStyle)pctStyle.style.background=`conic-gradient(#42dfb4 0 ${h.length?pct:0}%,#dce5f2 ${h.length?pct:0}% 100%)`;
+}
+
+// Ensure new screens are recognized by keyboard/back-style navigation.
+document.querySelectorAll('[data-screen]').forEach(b=>{b.addEventListener('click',()=>showScreen(b.dataset.screen))});
