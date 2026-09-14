@@ -12,25 +12,48 @@
 </head>
 <body>
 <div id="app">
-<header class="topbar">
-  <div class="brand-wrap"><img class="brand-logo" src="icons/studymate-logo.png" alt="StudyMate"><div><div class="brand">StudyMate</div><div class="brand-subtitle">Analyse. Practice. Improve.</div></div></div>
-  <nav class="top-nav">
+<header class="topbar home-topbar">
+  <div class="brand-wrap"><button class="mobile-menu icon-btn" id="mobileMenuBtn" aria-label="Menu">☰</button><img class="brand-logo" src="icons/studymate-logo.png" alt="StudyMate"><div><div class="brand">StudyMate</div><div class="brand-subtitle">NEET Test Analysis</div></div></div>
+  <nav class="top-nav desktop-nav">
     <button class="nav-btn active" data-screen="home">⌂ <span>Home</span></button>
     <button class="nav-btn" data-screen="practice">✦ <span>Practice</span></button>
     <button class="nav-btn" data-screen="reports">◒ <span>Reports</span></button>
     <button class="nav-btn" data-screen="history">◫ <span>History</span></button>
     <button class="icon-btn" id="settingsBtn" title="Settings">⚙</button>
   </nav>
+  <div class="home-head-actions"><button class="icon-btn" id="searchBtn" aria-label="Search">⌕</button><button class="icon-btn" id="settingsBtnMobile" aria-label="Settings">⚙</button></div>
 </header>
 <main>
 <section id="homeScreen" class="screen active">
-  <div class="hero-card">
-    <div class="hero-copy"><span class="eyebrow">NEET TEST ANALYSIS</span><h1>Understand where your marks are going.</h1><p>Analyse every question, turn mistakes into practice, and see your progress clearly.</p><button id="startBtn" class="primary hero-btn">▶ Start New Test <b>›</b></button></div>
-    <div class="hero-art"><div class="art-paper"><span></span><span></span><i></i><i></i><i></i></div><div class="art-magnify">⌕</div><div class="art-star">✦</div></div>
+  <div class="home-hero">
+    <div class="home-hero-copy">
+      <div class="eyebrow">NEET TEST ANALYSIS</div>
+      <h1 id="greetingTitle">Good Morning!</h1>
+      <p id="greetingSub">Discipline today, Doctor tomorrow. 💙</p>
+      <button id="startBtn" class="primary home-start">▶ <span>Start New Test</span><b>→</b></button>
+    </div>
+    <div class="home-mountain-art" aria-hidden="true"><div class="moon"></div><div class="mountain m1"></div><div class="mountain m2"></div><div class="student-silhouette"></div><span class="art-note">Discipline<br>today,<br>Doctor<br>tomorrow. ♡</span></div>
   </div>
-  <div class="home-stats"><div><small>Tests Analysed</small><strong id="homeTests">0</strong></div><div><small>Best Score</small><strong id="homeBest">—</strong></div><div><small>Latest Score</small><strong id="homeLatest">—</strong></div></div>
-  <div class="section-title"><div><span class="eyebrow">QUICK ACTIONS</span><h2>Keep moving forward</h2></div></div>
-  <div class="quick-grid"><button class="quick-card blue" id="quickPractice"><b>✦</b><span><strong>Practice</strong><small>Build a focused mock test</small></span>›</button><button class="quick-card green" id="quickAnalyse"><b>◒</b><span><strong>Analyse a Test</strong><small>Find exactly what to improve</small></span>›</button></div>
+  <div id="achievementCard" class="achievement-card hidden"></div>
+  <div class="home-tile-grid">
+    <button class="home-tile" data-screen="history"><span class="tile-icon purple">▤</span><strong>History</strong><small>View past tests</small><b>›</b></button>
+    <button class="home-tile" data-screen="reports"><span class="tile-icon teal">▥</span><strong>Stats</strong><small>See your progress</small><b>›</b></button>
+    <button class="home-tile" id="homeSyllabus"><span class="tile-icon blue">▥</span><strong>Syllabus</strong><small>Track your preparation</small><b>›</b></button>
+    <button class="home-tile" data-screen="reports"><span class="tile-icon orange">◔</span><strong>Reports</strong><small>Detailed analysis</small><b>›</b></button>
+  </div>
+  <div class="home-progress-card">
+    <div><h2>Your Progress</h2><span id="progressEncouragement">Keep Going! 💪</span></div>
+    <div class="progress-content"><div class="progress-ring"><strong id="homeProgressPct">0%</strong></div><div><b id="progressLine1">Start your first test.</b><p id="progressLine2">Every analysed test brings you closer.</p></div></div>
+    <div class="home-mini-stats"><div><strong id="homeTests">0</strong><small>Tests Analysed</small></div><div><strong id="homeBest">—</strong><small>Best Score</small></div><div><strong id="homeLatest">—</strong><small>Latest Score</small></div></div>
+  </div>
+  <div class="quote-card home-quote"><span>“</span><p>Small steps every day<br>lead to big results.</p><i>StudyMate</i></div>
+  <div class="home-section-title"><h2>Quick Actions</h2><span>Everything you need, in one place.</span></div>
+  <div class="home-quick-grid">
+    <button class="home-quick" id="quickPractice"><span class="qicon pink">◎</span><span><strong>Generate Mock Test</strong><small>Custom tests, your way</small></span><b>›</b></button>
+    <button class="home-quick" id="quickUpload"><span class="qicon blue">▧</span><span><strong>Upload PDF</strong><small>Turn your paper into an interactive quiz</small></span><b>›</b></button>
+    <button class="home-quick" id="quickMyTests"><span class="qicon yellow">★</span><span><strong>Practice from My Tests</strong><small>Reattempt, improve, get stronger</small></span><b>›</b></button>
+  </div>
+  <div class="home-bottom-grid"><button class="home-small-card"><span>▣</span><strong>Today's Goal</strong><small>Analyse. Revise. Improve.</small><b>›</b></button><button class="home-small-card"><span>◎</span><strong>NEET 2027</strong><small>Same Dream. Higher Focus.</small><b>›</b></button><div class="home-small-quote">“Progress is the sum of small efforts, repeated day in and day out.” <span>🌿</span></div></div>
 </section>
 
 <section id="practiceScreen" class="screen">
@@ -75,6 +98,9 @@
 <div id="pdfQuizModal" class="modal hidden"><div class="modal-card large-modal"><div class="modal-head"><div><span class="eyebrow">INTERACTIVE QUIZ</span><h3>Upload Question PDF</h3></div><button class="icon-btn close-modal">×</button></div><div id="pdfQuizBuilder"></div></div></div>
 <div id="practiceMyModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">PRACTICE FROM MY TESTS</span><h3>Choose what to reattempt</h3></div><button class="icon-btn close-modal">×</button></div><div id="practiceMyBuilder"></div></div></div>
 <div id="lockScreen" class="lock-screen hidden"><div class="lock-card"><div class="lock-logo">🔐</div><h2>StudyMate is Locked</h2><p>Enter your passcode to continue.</p><div id="lockBody"></div></div></div>
+
+<div id="nameModal" class="modal hidden"><div class="modal-card name-card"><div class="name-welcome">👋</div><h3>Welcome to StudyMate!</h3><p class="small-muted">What should we call you?</p><input id="nameInput" type="text" maxlength="32" placeholder="Enter your name" autocomplete="name"><div class="actions"><button id="saveNameBtn" class="primary">Continue →</button></div></div></div>
+<nav class="mobile-bottom-nav" id="mobileBottomNav"><button class="active" data-screen="home">⌂<span>Home</span></button><button data-screen="history">◷<span>History</span></button><button data-screen="reports">▥<span>Stats</span></button><button data-screen="settings">•••<span>More</span></button></nav>
 <div id="toast" class="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
