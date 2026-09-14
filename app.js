@@ -1,7 +1,7 @@
 /* StudyMate Final — local-first NEET analysis app. */
 const pdfjsLib = window.pdfjsLib || null;
 const $ = id => document.getElementById(id);
-const SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings'];
+const SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','planner','todo'];
 const SUBJECTS = ['Physics','Chemistry','Botany','Zoology'];
 const SYLLABUS = {
  Physics:['Physical World and Measurement','Motion in a Straight Line','Motion in a Plane','Laws of Motion','Work, Energy, and Power','System of Particles and Rotational Motion','Gravitation','Mechanical Properties of Solids','Mechanical Properties of Fluids','Thermal Properties of Matter','Thermodynamics','Kinetic Theory of Gases','Oscillations','Waves','Electric Charges and Fields','Electrostatic Potential and Capacitance','Current Electricity','Moving Charges and Magnetism','Magnetism and Matter','Electromagnetic Induction','Alternating Current','Electromagnetic Waves','Ray Optics and Optical Instruments','Wave Optics','Dual Nature of Radiation and Matter','Atoms','Nuclei','Semiconductor Electronics: Materials, Devices, and Simple Circuits','Experimental Skills'],
@@ -21,7 +21,7 @@ $('startBtn').onclick=()=>{resetTest();showScreen('about')};$('historyNewBtn').o
 $('quickPractice').onclick=()=>openModal('mockModal',renderMockBuilder);
 $('quickUpload').onclick=()=>openModal('pdfQuizModal',renderPdfQuizBuilder);
 $('quickMyTests').onclick=()=>openModal('practiceMyModal',renderPracticeMyBuilder);
-$('homeSyllabus').onclick=()=>showScreen('about');
+$('homePlanner')?.addEventListener('click',e=>{e.preventDefault();showScreen('planner')});
 $('generateMock').onclick=()=>openModal('mockModal',renderMockBuilder);$('uploadQuiz').onclick=()=>openModal('pdfQuizModal',renderPdfQuizBuilder);$('practiceMyTests').onclick=()=>openModal('practiceMyModal',renderPracticeMyBuilder);
 function resetTest(){state.test=null;state.pdf=null;state.pdfFile=null;state.current=0;state.questions=[];state.questionMap=new Map();$('aboutForm').reset();$('syllabusArea').innerHTML='';$('pdfChoiceArea').innerHTML=''}
 $('testType').addEventListener('change',renderSyllabusUI);
@@ -159,7 +159,7 @@ function generateMock(){
  }
  if(!pool.length)return alert('The current offline starter bank has no questions matching that selection. Use Upload PDF → Quiz or add questions to the local bank.');
  // Clone questions and give every generated question its own stable id/position.
- const questions=Array.from({length:count},(_,i)=>{const base=pool[i%pool.length];return {...base,number:i+1,sourceNumber:QUESTION_BANK.indexOf(base)+1};});
+ if(count>pool.length)return alert(`Only ${pool.length} matching offline questions are available for this selection. Choose a smaller count or use Upload PDF → Quiz for a larger real paper.`); const questions=pool.slice(0,count).map((base,i)=>({...base,number:i+1,sourceNumber:QUESTION_BANK.indexOf(base)+1}));
  closeModal('mockModal');
  openPracticeQuiz({title:`Generated Mock — ${level}`,questions,level,practiceType:type});
 }
@@ -294,8 +294,8 @@ $('saveNameBtn').onclick=()=>{const n=$('nameInput').value.trim().replace(/\s+/g
 $('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('saveNameBtn').click()});
 refreshHome();renderReports();lockIfNeeded();setInterval(refreshHome,60000);setTimeout(ensureName,250);
 
-/* ===== FINAL UX PATCH 2: animations, syllabus tracker, daily to-do, NEET motivation ===== */
-const EXTRA_SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','syllabus','todo'];
+/* ===== FINAL UX: animations, Success Planner, daily to-do, NEET motivation ===== */
+const EXTRA_SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','planner','todo'];
 function showScreen(name){
   EXTRA_SCREENS.forEach(s=>$(s+'Screen')?.classList.toggle('active',s===name));
   document.querySelectorAll('.nav-btn,[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));
@@ -303,13 +303,13 @@ function showScreen(name){
   if(name==='history') renderHistory();
   if(name==='reports') renderReports();
   if(name==='settings') renderSettings();
-  if(name==='syllabus') renderSyllabusTracker();
+  if(name==='planner') renderSuccessPlanner();
   if(name==='todo') renderTodo();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
 // Correct navigation for the newly interactive home cards.
-$('homeSyllabus')?.addEventListener('click',e=>{e.preventDefault();showScreen('syllabus')});
+$('homePlanner')?.addEventListener('click',e=>{e.preventDefault();showScreen('planner')});
 $('todoCard')?.addEventListener('click',()=>showScreen('todo'));
 $('neetCard')?.addEventListener('click',()=>openMotivation());
 
@@ -342,24 +342,64 @@ document.addEventListener('click',e=>{
   if(navigator.vibrate) try{navigator.vibrate(8)}catch{}
 },true);
 
-// ===== Syllabus Tracker =====
-const SYL_KEY='studymate_syllabus_tracker_v1';
-function getSyllabusTracker(){try{return JSON.parse(localStorage.getItem(SYL_KEY)||'{}')}catch{return{}}}
-function saveSyllabusTracker(x){localStorage.setItem(SYL_KEY,JSON.stringify(x))}
-function renderSyllabusTracker(){
-  const saved=getSyllabusTracker();
-  let total=0,done=0;
-  SUBJECTS.forEach(s=>SYLLABUS[s].forEach(c=>{total++;if(saved[`${s}::${c}`])done++}));
-  const overall=total?Math.round(done/total*100):0;
-  $('syllabusContent').innerHTML=`<div class="tracker-summary report-card"><div><span class="eyebrow">YOUR PREPARATION</span><h3>${overall}% Complete</h3><p class="small-muted">${done} of ${total} chapters completed</p></div><div class="tracker-ring" style="--pct:${overall}%"><strong>${overall}%</strong></div></div><div class="tracker-subject-tabs">${SUBJECTS.map((s,i)=>`<button type="button" class="tracker-tab ${i===0?'active':''}" data-tracker-sub="${s}">${s}</button>`).join('')}</div><div id="trackerPanels"></div>`;
-  const renderSubject=s=>{
-    const rows=SYLLABUS[s].map(c=>{const key=`${s}::${c}`,checked=!!getSyllabusTracker()[key];return `<label class="tracker-row ${checked?'done':''}"><input type="checkbox" data-track-key="${escapeHtml(key)}" ${checked?'checked':''}><span class="tracker-check">${checked?'✓':''}</span><span>${escapeHtml(c)}</span></label>`}).join('');
-    $('trackerPanels').innerHTML=`<div class="report-card tracker-card"><div class="tracker-head"><div><h3>${escapeHtml(s)}</h3><span class="small-muted">Tap a chapter when you have completed it.</span></div><button type="button" class="secondary" id="clearSubjectProgress">Reset ${escapeHtml(s)}</button></div><div class="tracker-list">${rows}</div></div>`;
-    $('trackerPanels').querySelectorAll('[data-track-key]').forEach(cb=>cb.onchange=()=>{const x=getSyllabusTracker();x[cb.dataset.trackKey]=cb.checked;saveSyllabusTracker(x);renderSyllabusTracker();setTimeout(()=>{document.querySelector(`[data-tracker-sub="${CSS.escape(s)}"]`)?.click()},0);toast(cb.checked?'Chapter marked complete ✓':'Chapter marked incomplete')});
-    $('clearSubjectProgress').onclick=()=>{const x=getSyllabusTracker();SYLLABUS[s].forEach(c=>delete x[`${s}::${c}`]);saveSyllabusTracker(x);renderSyllabusTracker();toast(`${s} progress reset.`)};
+// ===== NEET Success Planner =====
+// Planner is intentionally checklist-based and has NO reset button.
+const PLANNER_KEY='studymate_success_planner_v1';
+const PLANNER_STEPS=[
+  {key:'ncert',label:'NCERT Reading'},
+  {key:'dpp',label:'DPP'},
+  {key:'module',label:'Module / PYQs'},
+  {key:'test',label:'Test'},
+  {key:'rev1',label:'Rev-1',sub:'1 day'},
+  {key:'rev2',label:'Rev-2',sub:'3 days'},
+  {key:'rev3',label:'Rev-3',sub:'7 days'},
+  {key:'rev4',label:'Rev-4',sub:'21 days'},
+  {key:'rev5',label:'Rev-5',sub:'Before full test'},
+  {key:'mastered',label:'Mastered'}
+];
+function getPlanner(){try{return JSON.parse(localStorage.getItem(PLANNER_KEY)||'{}')}catch{return{}}}
+function savePlanner(x){localStorage.setItem(PLANNER_KEY,JSON.stringify(x))}
+function plannerChapterStatus(data,s,c){
+  const x=data[`${s}::${c}`]||{};
+  const checked=PLANNER_STEPS.slice(0,-1).filter(st=>!!x[st.key]).length;
+  return {...x,checked,complete:!!x.mastered};
+}
+function renderSuccessPlanner(){
+  const data=getPlanner();
+  let total=0,completed=0,mastered=0,needs=0,notStarted=0;
+  SUBJECTS.forEach(s=>SYLLABUS[s].forEach(c=>{
+    total++;const st=plannerChapterStatus(data,s,c);
+    if(st.mastered) mastered++;
+    else if(st.checked>=5) completed++;
+    else if(st.checked>0) needs++;
+    else notStarted++;
+  }));
+  const progress=total?Math.round((completed+mastered)/total*100):0;
+  $('plannerContent').innerHTML=`
+    <div class="planner-hero report-card">
+      <div class="planner-hero-copy"><span class="eyebrow">FOCUS • PLAN • STUDY • ACHIEVE</span><h3>Build your NEET 2027 success, one chapter at a time.</h3><p>Tick each milestone as you complete it. Your plan stays saved on this device.</p></div>
+      <div class="planner-progress" style="--planner-pct:${progress}%"><strong>${progress}%</strong><span>overall</span></div>
+    </div>
+    <div class="planner-stats report-card">
+      <div><strong>${total}</strong><small>Total Chapters</small></div><div><strong>${completed+mastered}</strong><small>On Track</small></div><div><strong>${needs}</strong><small>Needs Work</small></div><div><strong>${notStarted}</strong><small>Not Started</small></div><div><strong>${mastered}</strong><small>Mastered</small></div>
+    </div>
+    <div class="planner-tabs">${SUBJECTS.map((s,i)=>`<button type="button" class="planner-tab ${i===0?'active':''}" data-planner-sub="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('')}</div>
+    <div id="plannerPanel"></div>
+    <div class="planner-note report-card"><strong>🌱 Small, consistent actions compound.</strong><span>Use the revision columns to keep chapters alive instead of studying them once and forgetting them.</span></div>`;
+  const renderSubject=(subject)=>{
+    const rows=SYLLABUS[subject].map((chapter,i)=>{
+      const key=`${subject}::${chapter}`, x=data[key]||{}, st=plannerChapterStatus(data,subject,chapter);
+      const cls=st.mastered?'mastered':st.checked>=5?'ontrack':st.checked?'needswork':'notstarted';
+      const checks=PLANNER_STEPS.map(step=>`<label class="planner-check ${x[step.key]?'checked':''}" title="${escapeHtml(step.label)}"><input type="checkbox" data-planner-key="${escapeHtml(key)}" data-planner-step="${step.key}" ${x[step.key]?'checked':''}><span>${x[step.key]?'✓':''}</span></label>`).join('');
+      return `<div class="planner-row ${cls}"><div class="planner-number">${i+1}</div><div class="planner-chapter"><strong>${escapeHtml(chapter)}</strong><small>${st.mastered?'Mastered':st.checked>=5?'On Track':st.checked?'Needs Work':'Not Started'}</small></div>${checks}<div class="planner-status">${st.mastered?'🏆 Mastered':st.checked>=5?'🟢 On Track':st.checked?'🟡 Needs Work':'🔴 Not Started'}</div></div>`;
+    }).join('');
+    $('plannerPanel').innerHTML=`<div class="report-card planner-table-card"><div class="planner-table-head"><div><h3>${escapeHtml(subject)}</h3><span class="small-muted">Complete each column when you genuinely finish that milestone.</span></div><span class="planner-legend">✓ completed • 🏆 mastered</span></div><div class="planner-table-wrap"><div class="planner-header"><div>No.</div><div>Chapter</div>${PLANNER_STEPS.map(st=>`<div>${escapeHtml(st.label)}${st.sub?`<small>${escapeHtml(st.sub)}</small>`:''}</div>`).join('')}<div>Status</div></div>${rows}</div></div>`;
+    $('plannerPanel').querySelectorAll('[data-planner-key]').forEach(cb=>cb.onchange=()=>{
+      const all=getPlanner();const item=all[cb.dataset.plannerKey]||{};item[cb.dataset.plannerStep]=cb.checked;all[cb.dataset.plannerKey]=item;savePlanner(all);renderSuccessPlanner();setTimeout(()=>document.querySelector(`[data-planner-sub="${CSS.escape(subject)}"]`)?.click(),0);toast(cb.checked?'Milestone completed ✓':'Milestone unchecked');
+    });
   };
   renderSubject('Physics');
-  document.querySelectorAll('[data-tracker-sub]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tracker-sub]').forEach(x=>x.classList.toggle('active',x===b));renderSubject(b.dataset.trackerSub);document.querySelectorAll('[data-tracker-sub]').forEach(x=>x.classList.toggle('active',x===b))});
+  document.querySelectorAll('[data-planner-sub]').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('[data-planner-sub]').forEach(x=>x.classList.toggle('active',x===btn));renderSubject(btn.dataset.plannerSub);document.querySelectorAll('[data-planner-sub]').forEach(x=>x.classList.toggle('active',x===btn))});
 }
 
 // ===== Daily To-Do =====

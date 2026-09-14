@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <title>StudyMate — NEET Test Analysis</title>
-<link rel="manifest" href="manifest.json?v=final">
+<link rel="manifest" href="manifest.json?v=final3">
 <link rel="icon" href="icons/icon-192-v18.png">
-<link rel="stylesheet" href="style.css?v=ux2">
+<link rel="stylesheet" href="style.css?v=final3">
 </head>
 <body>
 <div id="app">
@@ -38,7 +38,7 @@
   <div class="home-tile-grid">
     <button class="home-tile" data-screen="history"><span class="tile-icon purple">▤</span><strong>History</strong><small>View past tests</small><b>›</b></button>
     <button class="home-tile" data-screen="reports"><span class="tile-icon teal">▥</span><strong>Stats</strong><small>See your progress</small><b>›</b></button>
-    <button class="home-tile" id="homeSyllabus" data-screen="syllabus"><span class="tile-icon blue">▥</span><strong>Syllabus Tracker</strong><small>Track your preparation</small><b>›</b></button>
+    <button class="home-tile" id="homePlanner" data-screen="planner"><span class="tile-icon blue">📚</span><strong>Success Planner</strong><small>Plan • Revise • Master</small><b>›</b></button>
     <button class="home-tile" data-screen="reports"><span class="tile-icon orange">◔</span><strong>Reports</strong><small>Detailed analysis</small><b>›</b></button>
   </div>
   <div class="home-progress-card">
@@ -66,7 +66,7 @@
 </section>
 
 <section id="reportsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">REPORTS</span><h2>Your long-term performance.</h2></div></div><div id="reportsContent"></div></section>
-<section id="syllabusScreen" class="screen"><div class="page-head"><div><span class="eyebrow">NEET 2027</span><h2>Syllabus Tracker</h2><div class="small-muted">Mark chapters as completed and keep your preparation visible.</div></div></div><div id="syllabusContent"></div></section>
+<section id="plannerScreen" class="screen"><div class="page-head"><div><span class="eyebrow">NEET 2027</span><h2>NEET Success Planner</h2><div class="small-muted">Plan your study, revision and chapter mastery across all four subjects.</div></div></div><div id="plannerContent"></div></section>
 <section id="todoScreen" class="screen"><div class="page-head"><div><span class="eyebrow">DAILY PLANNER</span><h2>Today's To-Do</h2><div class="small-muted">Create, complete and manage your daily study tasks.</div></div></div><div id="todoContent"></div></section>
 
 <section id="historyScreen" class="screen"><div class="page-head"><div><span class="eyebrow">YOUR RECORD</span><h2>Test History</h2></div><div><button id="clearHistoryBtn" class="danger">Clear History</button> <button id="historyNewBtn" class="primary">New Test</button></div></div><div id="historyList"></div></section>
@@ -107,6 +107,6 @@
 <div id="toast" class="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
-<script src="app.js?v=ux2"></script>
+<script src="app.js?v=final3"></script>
 </body>
 </html>
