@@ -21,7 +21,7 @@ $('startBtn').onclick=()=>{resetTest();showScreen('about')};$('historyNewBtn').o
 $('generateMock')?.addEventListener('click',()=>openModal('mockModal',renderMockBuilder));$('uploadQuiz')?.addEventListener('click',()=>openModal('pdfQuizModal',renderPdfQuizBuilder));$('practiceMyTests')?.addEventListener('click',()=>openModal('practiceMyModal',renderPracticeMyBuilder));
 $('mistakeNotebookHome')?.addEventListener('click',()=>showScreen('mistakeNotebook'));
 $('morePracticeMistakes')?.addEventListener('click',()=>{closeModal('moreModal');openModal('practiceMyModal',renderPracticeMyBuilder)});
-['moreNcert','moreGoals','moreComparison','moreRevision','moreWeakness','moreStudyMate'].forEach(id=>$(id)?.addEventListener('click',()=>toast('This feature is in the StudyMate blueprint and is ready for the next build.')));
+
 document.querySelectorAll('#moreModal [data-screen]').forEach(b=>b.addEventListener('click',()=>{closeModal('moreModal');showScreen(b.dataset.screen)}));
 function resetTest(){state.test=null;state.pdf=null;state.pdfFile=null;state.current=0;state.questions=[];state.questionMap=new Map();$('aboutForm').reset();$('syllabusArea').innerHTML='';$('pdfChoiceArea').innerHTML=''}
 $('testType').addEventListener('change',renderSyllabusUI);
@@ -102,13 +102,21 @@ function renderResult(record){const r=record.result,prev=previousComparison(reco
  $('resultContent').innerHTML=`<div class="result-hero"><span class="eyebrow">TEST COMPLETE 🎉</span><h2>${escapeHtml(record.name)}</h2><p class="small-muted">${escapeHtml(record.type)} • ${new Date(record.date).toLocaleDateString()} • Revised: ${escapeHtml(record.revised)}</p><div class="result-score"><div class="big">${r.total}</div><small>/ ${scoreMax}</small></div><div class="result-kpis"><div class="kpi"><strong>${r.correct}</strong><small>✓ Correct</small></div><div class="kpi"><strong>${r.incorrect}</strong><small>✕ Incorrect</small></div><div class="kpi"><strong>${r.skipped}</strong><small>− Skipped</small></div></div><div class="result-kpis" style="margin-top:10px"><div class="kpi"><strong>${r.accuracy.toFixed(1)}%</strong><small>Accuracy</small></div><div class="kpi"><strong>${r.silly}</strong><small>😵 Silly Mistakes</small></div><div class="kpi"><strong>${delta===null?'—':(delta>=0?'+':'')+delta}</strong><small>vs previous</small></div></div></div>${resultNav()}<div id="resultPanels"></div>`;
  const panels=$('resultPanels');panels.innerHTML=resultPanelOverview(record,quote)+resultPanelSubjects(r)+resultPanelMistakes(record)+resultPanelTopics(record)+resultPanelQuestions(record)+resultPanelTrend(trend);
  document.querySelectorAll('[data-result-tab]').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('[data-result-tab]').forEach(x=>x.classList.remove('active'));btn.classList.add('active');const id=btn.dataset.resultTab;document.querySelectorAll('.result-section').forEach(s=>s.style.display=s.dataset.section===id?'block':'none');document.querySelector(`.result-section[data-section="${id}"]`)?.scrollIntoView({behavior:'smooth',block:'start'})});
- document.querySelectorAll('.result-section').forEach((s,i)=>{if(i) s.style.display='none'});}
+ document.querySelectorAll('.result-section').forEach((s,i)=>{if(i) s.style.display='none'}); renderResultPdfQuestions(record);}
 function resultPanelOverview(record,quote){return`<section class="report-card result-section" data-section="overview"><h3>Your Performance</h3><div class="two-col"><div><div class="small-muted">Syllabus Covered</div><div class="syllabus-box" style="margin-top:6px">${escapeHtml(record.syllabus)}</div></div><div><div class="small-muted">Test Details</div><p><b>${record.questions.length}</b> questions</p><p><b>${escapeHtml(record.revised)}</b> revised before test</p></div></div><div class="quote-card" style="margin-top:14px">💡 “${escapeHtml(quote)}”</div><div class="actions"><button class="primary" onclick="showScreen('history')">View History</button><button class="secondary" onclick="showScreen('practice')">Practice Mistakes →</button></div></section>`}
 function resultPanelSubjects(r){return`<section class="report-card result-section" data-section="subjects"><h3>📚 Subject Performance</h3><div class="subject-grid">${SUBJECTS.map(s=>{const v=r.subjects[s];return`<div class="subject-card"><span class="small-muted">${s}</span><strong>${v.score}</strong><div class="small-muted">${v.correct} correct • ${v.incorrect} incorrect • ${v.skipped} skipped</div><div class="barline"><i style="width:${Math.min(100,v.accuracy)}%"></i></div><small>${v.accuracy.toFixed(1)}% accuracy</small></div>`}).join('')}</div></section>`}
 function resultPanelMistakes(record){const cats={silly:record.questions.filter(q=>q.silly).length,other:record.questions.filter(q=>q.status==='Incorrect'&&!q.silly).length,skipped:record.questions.filter(q=>q.status==='Skipped').length};const total=Math.max(1,cats.silly+cats.other+cats.skipped);const p1=cats.silly/total*100,p2=(cats.silly+cats.other)/total*100;return`<section class="report-card result-section" data-section="mistakes"><h3>😵 Where did you lose marks?</h3><div class="donut-wrap"><div style="position:relative"><div class="donut" style="background:conic-gradient(var(--green) 0 ${p1}%,var(--red) ${p1}% ${p2}%,#b9b0ff ${p2}% 100%)"></div><div class="donut-center">${record.result.incorrect}<br><span class="small-muted">Incorrect</span></div></div><div class="legend"><span><i class="dot" style="background:var(--green)"></i>${cats.silly} Silly Mistakes</span><span><i class="dot" style="background:var(--red)"></i>${cats.other} Other Incorrect</span><span><i class="dot" style="background:#b9b0ff"></i>${cats.skipped} Skipped</span></div></div></section>`}
 
 function resultPanelTopics(record){const map={};record.questions.forEach(q=>{if(q.topic?.trim()){map[q.topic.trim()]??={wrong:0,total:0};map[q.topic.trim()].total++;if(q.status!=='Correct')map[q.topic.trim()].wrong++}});const rows=Object.entries(map).sort((a,b)=>b[1].wrong-a[1].wrong).slice(0,10);return`<section class="report-card result-section" data-section="topics"><h3>🎯 Weak Topics</h3>${rows.length?rows.map(([t,v],i)=>`<div class="topic-row"><div><span class="topic-name">${i+1}. ${escapeHtml(t)}</span><div class="barline"><i style="width:${Math.min(100,v.wrong/Math.max(1,v.total)*100)}%"></i></div></div><strong>${v.wrong}</strong></div>`).join(''):'<div class="empty">No topics were recorded. Topic is optional, so weak-topic analysis grows as you add topics.</div>'}<h3 style="margin-top:22px">🌟 Strong Topics</h3><div class="small-muted">Strong topics are shown when enough topic-tagged correct answers exist.</div></section>`}
-function resultPanelQuestions(record){const qs=record.questions.filter(q=>q.status!=='Correct'||q.silly);return`<section class="report-card result-section" data-section="questions"><h3>📝 Question Review</h3><div class="question-list">${qs.slice(0,60).map(q=>`<div class="question-item"><div><b>Q${q.number}</b><small>${escapeHtml(q.reason||'Correct but marked as guessed')}</small>${q.topic?`<small>Topic: ${escapeHtml(q.topic)}</small>`:''}</div><span class="badge ${q.status.toLowerCase()}">${q.silly?'Silly Mistake':q.status}</span></div>`).join('')||'<div class="empty">No mistakes to review.</div>'}</div>${qs.length>60?`<p class="small-muted">Showing first 60 review items.</p>`:''}</section>`}
+function resultPanelQuestions(record){
+ const incorrect=record.questions.filter(q=>q.status==='Incorrect'),other=record.questions.filter(q=>q.status==='Skipped');
+ return `<section class="report-card result-section" data-section="questions"><h3>❌ Incorrect Questions</h3><p class="small-muted">Exact question cutouts are loaded from the original saved PDF when this test was analysed with a PDF.</p><div class="result-pdf-question-list">${incorrect.slice(0,60).map((q,i)=>`<article class="result-question-card"><div class="result-question-head"><b>Question ${q.number}</b><span class="badge ${q.silly?'incorrect':'incorrect'}">${q.silly?'Silly Mistake':'Incorrect'}</span></div><div class="result-question-viewer" id="resultPdfViewer_${escapeHtml(record.id)}_${i}"><div class="viewer-placeholder">Loading exact PDF question…</div></div><div class="result-question-meta">${q.topic?`<span>🎯 ${escapeHtml(q.topic)}</span>`:''}${q.reason?`<span>💭 ${escapeHtml(q.reason)}</span>`:''}</div></article>`).join('')||'<div class="empty">No incorrect questions in this test. 🎉</div>'}</div>${incorrect.length>60?`<p class="small-muted">Showing first 60 incorrect questions.</p>`:''}<div style="margin-top:18px"><h3>⏭️ Other Review Items</h3>${other.map(q=>`<div class="question-item"><div><b>Q${q.number}</b><small>${escapeHtml(q.reason||'Skipped')}</small>${q.topic?`<small>Topic: ${escapeHtml(q.topic)}</small>`:''}</div><span class="badge skipped">Skipped</span></div>`).join('')||'<div class="small-muted">No skipped questions.</div>'}</div></section>`;
+}
+async function renderResultPdfQuestions(record){
+ if(!record.hasPdf||!pdfjsLib)return;
+ let blob;try{blob=await getPdfBlob(record.id);if(!blob)throw new Error('missing PDF');const pdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;const map=await extractPdfMap(pdf);const qs=record.questions.filter(q=>q.status==='Incorrect').slice(0,60);for(let i=0;i<qs.length;i++){const el=$(`resultPdfViewer_${record.id}_${i}`);if(!el)continue;const info=map.get(Number(qs[i].number));if(!info){el.innerHTML='<div class="viewer-placeholder">Exact question could not be located in the saved PDF.</div>';continue}await renderPdfInfoToElement(pdf,info,el,1.25)}}catch(e){console.warn(e);document.querySelectorAll('[id^="resultPdfViewer_"]').forEach(el=>{el.innerHTML='<div class="viewer-placeholder">The original PDF is not available on this device.</div>'})}
+}
+async function renderPdfInfoToElement(pdf,info,el,scale=1.25){const page=await pdf.getPage(info.pageNo),vp=page.getViewport({scale}),x0=info.x0*scale,x1=info.x1*scale,top=info.top*scale,bottom=info.bottom*scale,canvas=document.createElement('canvas');canvas.width=Math.max(120,Math.ceil(x1-x0));canvas.height=Math.max(90,Math.ceil(bottom-top));await page.render({canvasContext:canvas.getContext('2d'),viewport:vp,transform:[1,0,0,1,-x0,-top]}).promise;el.innerHTML='';el.appendChild(canvas)}
 function resultPanelTrend(history){const max=Math.max(720,...history.map(x=>x.result.total),1);const pts=history.map((x,i)=>{const xPos=20+i*(560/Math.max(1,history.length-1));const y=185-(x.result.total/max)*150;return `${xPos},${y}`}).join(' ');return`<section class="report-card result-section" data-section="trend"><h3>📈 Score Trend</h3>${history.length>1?`<div class="chart-box"><svg class="trend-svg" viewBox="0 0 600 220" preserveAspectRatio="none"><polyline fill="none" stroke="#5b55e8" stroke-width="4" points="${pts}"/>${history.map((x,i)=>{const xp=20+i*(560/Math.max(1,history.length-1)),yp=185-(x.result.total/max)*150;return`<circle cx="${xp}" cy="${yp}" r="6" fill="#5b55e8"/><text x="${xp}" y="${yp-10}" text-anchor="middle" font-size="12">${x.result.total}</text>`}).join('')}</svg></div>`:'<div class="empty">Analyse more tests to unlock your score trend.</div>'}</section>`}
 function renderHistory(){const h=getHistory();if(!h.length){$('historyList').innerHTML='<div class="empty">No tests analysed yet.<br><br>Start your first test to build your report.</div>';return}$('historyList').innerHTML=h.map((r,i)=>`<div class="history-item"><div><strong>${escapeHtml(r.name)}</strong><div class="history-meta">${escapeHtml(r.type)} • ${new Date(r.date).toLocaleDateString()} • ${r.questions.length} questions</div></div><div><strong>${r.result.total}</strong> <button class="secondary" data-open-history="${i}">Open</button></div></div>`).join('');$('historyList').querySelectorAll('[data-open-history]').forEach(b=>b.onclick=()=>{const r=h[Number(b.dataset.openHistory)];renderResult(r);showScreen('result')})}
 $('clearHistoryBtn').onclick=()=>{const h=getHistory();if(!h.length)return toast('History is already empty.');if(confirm(`Delete all ${h.length} test records? This cannot be undone.`)){localStorage.removeItem(LS.history);renderHistory();refreshHome();toast('History cleared.')}};
@@ -318,7 +326,7 @@ function renderDaySummary(){const all=getDaySummaries(),today=new Date().toISOSt
 
 /* ===== Mistake Notebook ===== */
 async function renderMistakeNotebook(){const h=getHistory(),items=[];h.forEach(r=>(r.questions||[]).forEach(q=>{if(q.status!=='Correct'||q.silly)items.push({record:r,q})}));const box=$('mistakeNotebookContent');if(!items.length){box.innerHTML='<div class="empty">No mistakes yet. Complete a test analysis and your mistakes will appear here.</div>';return}box.innerHTML=`<div class="mistake-list">${items.map((it,i)=>`<article class="mistake-entry"><div class="mistake-entry-head"><div><strong>Q${it.q.number}</strong><span>${escapeHtml(it.record.name)}</span></div><div class="mistake-tags"><span class="badge ${String(it.q.status||'').toLowerCase()}">${it.q.silly?'Silly Mistake':escapeHtml(it.q.status)}</span>${it.q.topic?`<span class="topic-pill">${escapeHtml(it.q.topic)}</span>`:'<span class="topic-pill">Topic not recorded</span>'}</div></div><div class="mistake-question-viewer" id="mistakeViewer_${i}"><div class="viewer-placeholder">Loading exact PDF question…</div></div></article>`).join('')}</div><div class="mistake-practice-cta"><h3>Ready to fix your mistakes?</h3><p>Practice the questions above without changing your original test result.</p><button class="primary" id="notebookPracticeBtn">🔥 Practice My Mistakes</button></div>`;$('notebookPracticeBtn').onclick=()=>openModal('practiceMyModal',renderPracticeMyBuilder);for(let i=0;i<items.length;i++)renderMistakeEntryPdf(items[i],$('mistakeViewer_'+i));}
-async function renderMistakeEntryPdf(item,el){if(!el)return;if(!item.record.hasPdf){el.innerHTML='<div class="viewer-placeholder">This test was analysed without a saved PDF.</div>';return}try{const blob=await getPdfBlob(item.record.id);if(!blob)throw new Error('missing');const pdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;const map=await extractPdfMap(pdf),info=map.get(Number(item.q.number));if(!info)throw new Error('question not found');const page=await pdf.getPage(info.pageNo),scale=1.25,vp=page.getViewport({scale}),x0=info.x0*scale,x1=info.x1*scale,top=info.top*scale,bottom=info.bottom*scale,canvas=document.createElement('canvas');canvas.width=Math.ceil(x1-x0);canvas.height=Math.ceil(bottom-top);await page.render({canvasContext:canvas.getContext('2d'),viewport:vp,transform:[1,0,0,1,-x0,-top]}).promise;el.innerHTML='';el.appendChild(canvas)}catch(e){console.warn(e);el.innerHTML='<div class="viewer-placeholder">Could not load the exact PDF cutout. The original PDF may have been removed from this browser.</div>'}}
+async function renderMistakeEntryPdf(item,el){if(!el)return;if(!item.record.hasPdf){el.innerHTML='<div class="viewer-placeholder">This test was analysed without a saved PDF.</div>';return}try{const blob=await getPdfBlob(item.record.id);if(!blob)throw new Error('missing');const pdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;const map=await extractPdfMap(pdf),info=map.get(Number(item.q.number));if(!info)throw new Error('question not found');await renderPdfInfoToElement(pdf,info,el,1.25)}catch(e){console.warn(e);el.innerHTML='<div class="viewer-placeholder">Could not load the exact PDF cutout. The original PDF may have been removed from this browser.</div>'}}
 
 /* ===== Backup & Restore: local data + original PDF blobs ===== */
 async function readAllPdfRecords(){const db=await openPdfDb();const out=await new Promise((res,rej)=>{const tx=db.transaction(PDF_STORE,'readonly'),req=tx.objectStore(PDF_STORE).getAll();req.onsuccess=()=>res(req.result||[]);req.onerror=()=>rej(req.error)});db.close();return out}
@@ -346,10 +354,10 @@ async function recoverPasscode(){const s=getSecurity();if(!s?.questions?.length)
 let lastHidden=0;document.addEventListener('visibilitychange',()=>{if(document.hidden){lastHidden=Date.now();return}const s=getSecurity();if(!s?.enabled)return;const auto=s.auto||'immediately';if(auto==='immediately'||(auto!=='never'&&Date.now()-lastHidden>({ '1m':60000,'5m':300000,'15m':900000}[auto]||0)))showLock()});
 $('saveNameBtn').onclick=()=>{const n=$('nameInput').value.trim().replace(/\s+/g,' ');if(!n)return toast('Please enter your name.');localStorage.setItem('studymate_user_name',n);$('nameModal').classList.add('hidden');refreshHome();toast(`Welcome to StudyMate, ${n}!`)};
 $('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('saveNameBtn').click()});
-refreshHome();renderReports();lockIfNeeded();setInterval(refreshHome,60000);setTimeout(ensureName,250);
+refreshHome();renderReports();renderCountdown();lockIfNeeded();setInterval(refreshHome,60000);setInterval(renderCountdown,1000);setTimeout(ensureName,250);
 
 /* ===== FINAL UX: animations, Success Planner, daily to-do, NEET motivation ===== */
-const EXTRA_SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','planner','todo'];
+const EXTRA_SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','planner','todo','daySummary','mistakeNotebook','ncert','goals','comparison','revision','weakness','studymate'];
 function showScreen(name){
   EXTRA_SCREENS.forEach(s=>$(s+'Screen')?.classList.toggle('active',s===name));
   document.querySelectorAll('.nav-btn,[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));
@@ -359,6 +367,14 @@ function showScreen(name){
   if(name==='settings') renderSettings();
   if(name==='planner') renderSuccessPlanner();
   if(name==='todo') renderTodo();
+  if(name==='daySummary') renderDaySummary();
+  if(name==='mistakeNotebook') renderMistakeNotebook();
+  if(name==='ncert') renderNcertFocus();
+  if(name==='goals') renderDailyGoals();
+  if(name==='comparison') renderTestComparison();
+  if(name==='revision') renderIntelligentRevision();
+  if(name==='weakness') renderSmartWeakness();
+  if(name==='studymate') renderPersonalStudyMate();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -468,7 +484,7 @@ function renderSuccessPlanner(){
   };
   const bindPlannerChecks=(subject)=>{
     document.querySelectorAll('[data-planner-key]').forEach(cb=>cb.onchange=()=>{
-      const all=getPlanner();const item=all[cb.dataset.plannerKey]||{};item[cb.dataset.plannerStep]=cb.checked;all[cb.dataset.plannerKey]=item;savePlanner(all);renderSuccessPlanner();requestAnimationFrame(()=>document.querySelector(`[data-planner-sub="${CSS.escape(subject)}"]`)?.click());toast(cb.checked?'Milestone completed ✓':'Milestone unchecked');
+      const all=getPlanner();const item=all[cb.dataset.plannerKey]||{};item[cb.dataset.plannerStep]=cb.checked;if(cb.checked)item.lastStudy=new Date().toISOString();all[cb.dataset.plannerKey]=item;savePlanner(all);renderSuccessPlanner();requestAnimationFrame(()=>document.querySelector(`[data-planner-sub="${CSS.escape(subject)}"]`)?.click());toast(cb.checked?'Milestone completed ✓':'Milestone unchecked');
     });
   };
   renderSubject('Physics');
@@ -522,18 +538,116 @@ function timeGreeting(){
   if(h<21)return ['Good Evening','Still one step closer to your dream. ✨'];
   return ['Good Night','Be proud of today, then come back stronger tomorrow. 🌙'];
 }
+function getDailyQuote(){
+  const quotes=[
+    'Your dream deserves your consistency. 🩺',
+    'One day, you will thank yourself for not giving up today. 🌱',
+    'A bad test is not a bad future. 🌤️',
+    'Small progress is still progress. ✨',
+    'Keep going, future doctor. 💙',
+    'Don’t quit on your hardest day. 🔥',
+    'One focused session at a time. You’ve got this. 💪',
+    'Your effort today is building tomorrow’s result. 🩺',
+    'You do not need a perfect day. You need a consistent one. 🌱',
+    'Trust the process. Keep studying, keep improving. 🎯'
+  ];
+  const d=new Date();
+  const key=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/86400000;
+  return quotes[((Math.floor(key)%quotes.length)+quotes.length)%quotes.length];
+}
 function refreshHome(){
   const h=getHistory(),name=getUserName(),doctor=shouldShowDoctor(h),g=timeGreeting();
-  $('homeTests').textContent=h.length;$('homeBest').textContent=h.length?Math.max(...h.map(x=>x.result.total)):'—';$('homeLatest').textContent=h.length?h[0].result.total:'—';
-  $('greetingTitle').innerHTML=`${escapeHtml(g[0])}${name?`, <span class="home-name">${doctor?'Dr. ':''}${escapeHtml(name)}</span>`:'!'}`;
-  $('greetingSub').textContent=doctor?'Five consecutive 600+ tests. Keep going, Doctor! 🩺':g[1];
-  const latest=h[0]?.result?.total||0,pct=Math.min(100,Math.round(latest/7.2));$('homeProgressPct').textContent=h.length?`${pct}%`:'0%';
-  $('progressLine1').textContent=h.length?(doctor?'600+ streak achieved.':'Your latest score is '+latest+'.'):'Start your first test.';$('progressLine2').textContent=h.length?'Analyse. Revise. Improve. Repeat.':'Every analysed test brings you closer.';
-  const ach=$('achievementCard');if(doctor){ach.classList.remove('hidden');ach.innerHTML=`<div class="achievement-title">🏆 ACHIEVEMENT UNLOCKED</div><strong>🩺 Dr. ${escapeHtml(name)} — 600+ Excellence Streak</strong><p>600+ in each of your last 5 tests. “Consistency turns preparation into success.”</p>`}else ach.classList.add('hidden');
-  const pctStyle=$('homeProgressPct')?.parentElement;if(pctStyle)pctStyle.style.background=`conic-gradient(#42dfb4 0 ${h.length?pct:0}%,#dce5f2 ${h.length?pct:0}% 100%)`;
+  const title=$('greetingTitle'); if(title) title.innerHTML=`${escapeHtml(g[0])}${name?`, <span class="home-name">${doctor?'Dr. ':''}${escapeHtml(name)}</span>`:'!'}`;
+  const quote=$('dailyQuote'); if(quote) quote.textContent=getDailyQuote();
+  const sub=$('greetingSub'); if(sub) sub.textContent=doctor?'Five consecutive 600+ tests. Keep going, Doctor! 🩺':g[1];
+  const ach=$('achievementCard');
+  if(ach){if(doctor){ach.classList.remove('hidden');ach.innerHTML=`<div class="achievement-title">🏆 ACHIEVEMENT UNLOCKED</div><strong>🩺 Dr. ${escapeHtml(name)} — 600+ Excellence Streak</strong><p>600+ in each of your last 5 tests. Consistency turns preparation into success.</p>`}else ach.classList.add('hidden')}
+  const active=document.querySelector('.screen.active')?.id?.replace('Screen','');
+  document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.screen===active));
 }
+
 
 // Ensure new screens are recognized by keyboard/back-style navigation.
 document.querySelectorAll('[data-screen]').forEach(b=>{b.addEventListener('click',()=>showScreen(b.dataset.screen))});
+
+/* ===== NEET 2027 countdown ===== */
+function getNeetTarget(){
+  const saved=localStorage.getItem('studymate_neet_target');
+  if(saved){const d=new Date(saved);if(!Number.isNaN(d.getTime()))return d.getTime()}
+  // Editable default placeholder date; Settings lets the user set the actual target once published.
+  return new Date('2027-05-01T00:00:00+05:30').getTime();
+}
+function renderCountdown(){
+  const el=$('neetCountdown'); if(!el)return;
+  const target=getNeetTarget(),diff=target-Date.now();
+  if(diff<=0){el.textContent='NEET 2027 • Target reached';return}
+  const sec=Math.floor(diff/1000),days=Math.floor(sec/86400),hours=Math.floor(sec%86400/3600),mins=Math.floor(sec%3600/60),secs=sec%60;
+  el.textContent=`${days} Days • ${String(hours).padStart(2,'0')}h ${String(mins).padStart(2,'0')}m ${String(secs).padStart(2,'0')}s`;
+  const note=$('neetCountdownNote');if(note)note.textContent=localStorage.getItem('studymate_neet_target')?'Your saved NEET 2027 target date.':'Set the target date in Settings when the exam date is published.';
+}
+
+/* ===== NCERT Focus Mode ===== */
+const NCERT_KEY='studymate_ncert_focus_v1';
+function getNcert(){try{return JSON.parse(localStorage.getItem(NCERT_KEY)||'{}')}catch{return{}}}
+function saveNcert(x){localStorage.setItem(NCERT_KEY,JSON.stringify(x))}
+const NCERT_STEPS=[['reading','NCERT Reading'],['lines','Important Lines Reviewed'],['rev1','First Revision'],['rev2','Second Revision'],['pyq','PYQs Practiced']];
+function renderNcertFocus(){
+  const data=getNcert();
+  const subject=localStorage.getItem('studymate_ncert_subject')||'Physics', chapter=localStorage.getItem('studymate_ncert_chapter')||SYLLABUS[subject][0];
+  const key=`${subject}::${chapter}`,x=data[key]||{};
+  $('ncertContent').innerHTML=`<div class="report-card"><div class="two-col"><div class="field"><label>Subject</label><select id="ncertSubject">${SUBJECTS.map(s=>`<option ${s===subject?'selected':''}>${s}</option>`).join('')}</select></div><div class="field"><label>Chapter</label><select id="ncertChapter">${SYLLABUS[subject].map(c=>`<option ${c===chapter?'selected':''}>${escapeHtml(c)}</option>`).join('')}</select></div></div></div><div class="report-card"><h3>📖 ${escapeHtml(chapter)}</h3>${NCERT_STEPS.map(([k,l])=>`<label class="checkline"><input type="checkbox" data-ncert-step="${k}" ${x[k]?'checked':''}> ${l}</label>`).join('')}</div>`;
+  $('ncertSubject').onchange=e=>{localStorage.setItem('studymate_ncert_subject',e.target.value);localStorage.setItem('studymate_ncert_chapter',SYLLABUS[e.target.value][0]);renderNcertFocus()};
+  $('ncertChapter').onchange=e=>{localStorage.setItem('studymate_ncert_chapter',e.target.value);renderNcertFocus()};
+  document.querySelectorAll('[data-ncert-step]').forEach(c=>c.onchange=e=>{const d=getNcert(),z=d[key]||{};z[e.target.dataset.ncertStep]=e.target.checked;d[key]=z;saveNcert(d);renderNcertFocus();toast('NCERT progress saved ✓')});
+}
+
+/* ===== Daily Goals ===== */
+const GOALS_KEY='studymate_daily_goals_v1';
+function getGoals(){try{return JSON.parse(localStorage.getItem(GOALS_KEY)||'{}')}catch{return{}}}
+function saveGoals(x){localStorage.setItem(GOALS_KEY,JSON.stringify(x))}
+function renderDailyGoals(){
+  const goals=getGoals(),today=new Date().toISOString().slice(0,10),g=goals[today]||{minutes:0,questions:0,revision:0,ncert:0,tests:0};
+  const summary=getDaySummaries()[today]||{};const tests=getHistory().filter(x=>x.date?.slice(0,10)===today).length;
+  const actual={minutes:parseStudyMinutes(summary.time),questions:Number(summary.questions||0),revision:Number(g.revision||0),ncert:Number(g.ncert||0),tests};
+  $('goalsContent').innerHTML=`<form id="goalsForm" class="panel"><div class="two-col"><div class="field"><label>⏱️ Study time goal (minutes)</label><input id="goalMinutes" type="number" min="0" value="${g.minutes||0}"></div><div class="field"><label>❓ Questions goal</label><input id="goalQuestions" type="number" min="0" value="${g.questions||0}"></div><div class="field"><label>🔄 Revision goal</label><input id="goalRevision" type="number" min="0" value="${g.revision||0}"></div><div class="field"><label>📖 NCERT goal</label><input id="goalNcert" type="number" min="0" value="${g.ncert||0}"></div><div class="field"><label>📝 Tests goal</label><input id="goalTests" type="number" min="0" value="${g.tests||0}"></div></div><button class="primary">Save Today's Goals ✓</button></form><div class="report-card"><h3>📈 Today's Progress</h3>${[['minutes','Effective study','min'],['questions','Questions','Q'],['revision','Revision',''],['ncert','NCERT',''],['tests','Tests','']].map(([k,l,u])=>{const goal=Number(g[k]||0),a=Number(actual[k]||0),pct=goal?Math.min(100,a/goal*100):0;return`<div class="goal-row"><div><b>${l}</b><span>${a}${u?' '+u:''} / ${goal||'—'}</span></div><div class="barline"><i style="width:${pct}%"></i></div></div>`}).join('')}</div>`;
+  $('goalsForm').onsubmit=e=>{e.preventDefault();goals[today]={minutes:Number($('goalMinutes').value||0),questions:Number($('goalQuestions').value||0),revision:Number($('goalRevision').value||0),ncert:Number($('goalNcert').value||0),tests:Number($('goalTests').value||0)};saveGoals(goals);renderDailyGoals();toast('Daily goals saved ✓')}
+}
+function parseStudyMinutes(v){const s=String(v||'').toLowerCase().trim();if(!s)return 0;let m=0;const h=s.match(/(\d+(?:\.\d+)?)\s*h/);const mi=s.match(/(\d+(?:\.\d+)?)\s*m/);if(h)m+=Number(h[1])*60;if(mi)m+=Number(mi[1]);if(!h&&!mi&&/^\d+(?:\.\d+)?$/.test(s))m=Number(s);return Math.round(m)}
+
+/* ===== Test Comparison ===== */
+function renderTestComparison(){
+  const h=getHistory();if(h.length<2){$('comparisonContent').innerHTML='<div class="empty">Analyse at least two tests to compare them.</div>';return}
+  const aId=localStorage.getItem('studymate_compare_a')||h[0].id,bId=localStorage.getItem('studymate_compare_b')||h[1].id,a=h.find(x=>x.id===aId)||h[0],b=h.find(x=>x.id===bId)||h[1];
+  const delta=(x,y)=>x-y;
+  $('comparisonContent').innerHTML=`<div class="report-card"><div class="two-col"><div class="field"><label>Current test</label><select id="compareA">${h.map(x=>`<option value="${x.id}" ${x.id===a.id?'selected':''}>${escapeHtml(x.name)} — ${x.result.total}</option>`).join('')}</select></div><div class="field"><label>Compare with</label><select id="compareB">${h.map(x=>`<option value="${x.id}" ${x.id===b.id?'selected':''}>${escapeHtml(x.name)} — ${x.result.total}</option>`).join('')}</select></div></div></div><div class="report-card"><h3>⚔️ Comparison</h3><div class="comparison-grid">${[['Score',a.result.total,b.result.total],['Accuracy',a.result.accuracy.toFixed(1)+'%',b.result.accuracy.toFixed(1)+'%'],['Silly Mistakes',a.result.silly,b.result.silly],['Incorrect',a.result.incorrect,b.result.incorrect],['Skipped',a.result.skipped,b.result.skipped]].map(([l,x,y])=>`<div><span>${l}</span><b>${x}</b><small>${y}</small><em>${typeof x==='number'&&typeof y==='number'?(delta(x,y)>=0?'+':'')+delta(x,y):''}</em></div>`).join('')}</div></div>`;
+  $('compareA').onchange=e=>{localStorage.setItem('studymate_compare_a',e.target.value);renderTestComparison()};$('compareB').onchange=e=>{localStorage.setItem('studymate_compare_b',e.target.value);renderTestComparison()};
+}
+
+/* ===== Intelligent Revision ===== */
+function renderIntelligentRevision(){
+  const p=getPlanner(),today=new Date();const rows=[];
+  for(const [key,x] of Object.entries(p)){const [s,c]=key.split('::');if(!x||x.mastered)continue;const last=x.lastStudy?new Date(x.lastStudy):null;let due=!last;let label='Start revision';if(last){const days=Math.floor((today-last)/86400000);if(days>=30&&!x.rev5){due=true;label='Rev-5 due';}else if(days>=21&&!x.rev4){due=true;label='Rev-4 due';}else if(days>=7&&!x.rev3){due=true;label='Rev-3 due';}else if(days>=3&&!x.rev2){due=true;label='Rev-2 due';}else if(days>=1&&!x.rev1){due=true;label='Rev-1 due';}}
+    if(due)rows.push({s,c,label})}
+  $('revisionContent').innerHTML=`<div class="report-card"><h3>🧠 Revision Queue</h3>${rows.length?rows.slice(0,30).map(x=>`<div class="focus-row"><div><b>${escapeHtml(x.c)}</b><small>${x.s}</small></div><span class="badge incorrect">${x.label}</span></div>`).join(''):'<div class="empty">No revision is currently overdue from your Success Planner. Keep your milestones updated.</div>'}</div>`;
+}
+
+/* ===== Smart Weakness Engine ===== */
+function renderSmartWeakness(){
+  const map={};getHistory().forEach(r=>(r.questions||[]).forEach(q=>{if(!q.topic?.trim())return;const t=q.topic.trim();map[t]??={total:0,wrong:0,silly:0,skipped:0,last:r.date};map[t].total++;if(q.status!=='Correct')map[t].wrong++;if(q.silly)map[t].silly++;if(q.status==='Skipped')map[t].skipped++;if(new Date(r.date)>new Date(map[t].last))map[t].last=r.date}));
+  const rows=Object.entries(map).map(([topic,v])=>{const acc=(v.total-v.wrong)/v.total*100,days=Math.max(0,Math.floor((Date.now()-new Date(v.last))/86400000));const score=(100-acc)*0.55+v.silly*5+v.skipped*3+Math.min(30,days*1.5);return{topic,...v,acc,days,score}}).sort((a,b)=>b.score-a.score).slice(0,20);
+  $('weaknessContent').innerHTML=`<div class="report-card"><h3>🔥 Smart Weakness Ranking</h3>${rows.length?rows.map((x,i)=>`<div class="weakness-row"><div><b>${i+1}. ${escapeHtml(x.topic)}</b><small>Accuracy ${x.acc.toFixed(0)}% • ${x.wrong} incorrect • ${x.silly} silly • ${x.skipped} skipped • ${x.days}d since practice</small></div><strong>${x.score.toFixed(0)}<small> priority</small></strong></div>`).join(''):'<div class="empty">Record topics during test analysis to build your weakness ranking.</div>'}</div>`;
+}
+
+/* ===== Personal NEET StudyMate ===== */
+function renderPersonalStudyMate(){
+  const h=getHistory(),p=getPlanner(),recommend=[];
+  // Highest-priority weak topic
+  const topicMap={};h.forEach(r=>(r.questions||[]).forEach(q=>{if(!q.topic?.trim())return;const t=q.topic.trim();topicMap[t]??={t,total:0,wrong:0};topicMap[t].total++;if(q.status!=='Correct')topicMap[t].wrong++}));
+  const weak=Object.values(topicMap).sort((a,b)=>(b.wrong/b.total)-(a.wrong/a.total))[0];if(weak)recommend.push(`🎯 Revise <b>${escapeHtml(weak.t)}</b> — it has ${weak.wrong}/${weak.total} recorded non-correct questions.`);
+  const day=getDaySummaries()[new Date().toISOString().slice(0,10)];if(!day)recommend.push('📋 Add your Day Summary so StudyMate can track what you actually studied today.');
+  const due=Object.entries(p).find(([k,x])=>x&&!x.mastered);if(due){const [s,c]=due[0].split('::');recommend.push(`🔄 Continue <b>${escapeHtml(c)}</b> in ${s} and update its next milestone.`)}
+  if(!recommend.length)recommend.push('🌱 Keep building your record. Analyse tests, record topics and update your planner so StudyMate can give sharper recommendations.');
+  $('studymateContent').innerHTML=`<div class="study-mate-hero report-card"><div class="motivation-art">🤖🩺</div><h3>Personal NEET StudyMate</h3><p>Recommendations based on the data you have recorded in StudyMate.</p></div><div class="report-card"><h3>🎯 What should I do now?</h3>${recommend.map((x,i)=>`<div class="focus-row"><div><b>${i+1}</b></div><p>${x}</p></div>`).join('')}</div>`;
+}
 
 applyTheme(localStorage.getItem('studymate_theme')||'system');
