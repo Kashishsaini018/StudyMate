@@ -1,26 +1,22 @@
-# StudyMate Final
+# StudyMate V5 — Final Local-First Build
 
-StudyMate is a local-first, mobile-first NEET test analysis and practice PWA.
+## Included
+- Final clean Home page
+- Start New Test Analysis
+- History / Reports / Success Planner / Day Summary
+- Large Mistake Notebook with exact original PDF question cutouts
+- Practice My Mistakes / Redo My Mistakes using locally saved PDFs
+- IndexedDB PDF persistence
+- Backup & Restore of local app data + original PDFs
+- App Lock + recovery questions
+- Light / Dark / System theme
+- Configurable NEET 2027 countdown
+- Existing PDF interactive quiz and mock practice flows
 
-## Final features
-- Minimal + illustration home dashboard based on the approved Dashboard + Dark-mode feature combination.
-- Time-aware greeting and first-launch name setup; 5 consecutive 600+ analyzed tests unlock the Dr. achievement.
-- Test analysis with PDF/no-PDF flow, Correct/Incorrect/Skipped states, silly-mistake tracking, optional topics, and required reasons.
-- Coordinate/layout-aware PDF question map designed for multi-column papers; original question crops are rendered instead of trusting raw PDF text order.
-- Detailed individual test result report with overview, subjects, mistakes, weak topics, question review, score trend, and data-driven insights.
-- Practice: generated mock tests, PDF interactive quiz, and Practice from My Tests.
-- Practice attempts are separate from original test history.
-- Long-term Reports and History.
-- NEET Success Planner for Physics, Chemistry, Botany, Zoology with NCERT/DPP/Module-PYQ/Test and revision milestones; no reset control.
-- Daily To-Do list.
-- Rotating NEET 2027 motivational/emotional messages.
-- Local passcode app lock with three recovery questions and secure SHA-256 hashes.
-- IndexedDB storage for uploaded test PDFs.
+## Important storage behavior
+StudyMate stores normal app data in localStorage and uploaded PDFs in IndexedDB. Updating the app files on the same browser origin does not normally delete those stores. However, clearing browser/site data, changing origin/domain, using a different browser/profile/device, or intentionally clearing app storage can remove local data.
 
-## Syllabus source
-The built-in chapter list follows the user-provided `Neet-2027_syllabus.html` source used for the final build.
+Use Settings → Backup & Restore → Create Backup before a major update or moving devices.
 
-## Run
-Upload the extracted files to the root of the GitHub Pages `StudyMate` site. Do not upload the ZIP itself.
-
-PDF.js 3.11.174 is loaded from cdnjs in `index.html`; PDF functionality therefore needs network access unless the library is bundled locally later.
+## NEET 2027 countdown
+The NTA notice archive currently does not publish a NEET UG 2027 exam date, so the countdown target is configurable in Settings. The included target is only a placeholder and is not presented as an official NTA date.

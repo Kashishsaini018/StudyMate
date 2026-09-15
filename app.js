@@ -1,7 +1,7 @@
 /* StudyMate Final — local-first NEET analysis app. */
 const pdfjsLib = window.pdfjsLib || null;
 const $ = id => document.getElementById(id);
-const SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','planner','todo'];
+const SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','planner','todo','daySummary','mistakeNotebook'];
 const SUBJECTS = ['Physics','Chemistry','Botany','Zoology'];
 const SYLLABUS = {
  Physics:['Physical World and Measurement','Motion in a Straight Line','Motion in a Plane','Laws of Motion','Work, Energy, and Power','System of Particles and Rotational Motion','Gravitation','Mechanical Properties of Solids','Mechanical Properties of Fluids','Thermal Properties of Matter','Thermodynamics','Kinetic Theory of Gases','Oscillations','Waves','Electric Charges and Fields','Electrostatic Potential and Capacitance','Current Electricity','Moving Charges and Magnetism','Magnetism and Matter','Electromagnetic Induction','Alternating Current','Electromagnetic Waves','Ray Optics and Optical Instruments','Wave Optics','Dual Nature of Radiation and Matter','Atoms','Nuclei','Semiconductor Electronics: Materials, Devices, and Simple Circuits','Experimental Skills'],
@@ -14,15 +14,15 @@ const LS={history:'studymate_history_final',security:'studymate_security_v1',pra
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function uid(){return crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2)}
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2200)}
-function showScreen(name){SCREENS.forEach(s=>$(s+'Screen')?.classList.toggle('active',s===name));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));if(name==='home')refreshHome();if(name==='history')renderHistory();if(name==='reports')renderReports();if(name==='settings')renderSettings()}
+function showScreen(name){SCREENS.forEach(s=>$(s+'Screen')?.classList.toggle('active',s===name));document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));if(name==='home')refreshHome();if(name==='history')renderHistory();if(name==='reports')renderReports();if(name==='settings')renderSettings();if(name==='daySummary')renderDaySummary();if(name==='mistakeNotebook')renderMistakeNotebook();if(name==='planner')renderSuccessPlanner();}
 document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));
-$('settingsBtn').onclick=()=>showScreen('settings');$('settingsBtnMobile').onclick=()=>showScreen('settings');$('mobileMenuBtn').onclick=()=>showScreen('settings');
+$('settingsBtn')?.addEventListener('click',()=>showScreen('settings'));$('settingsBtnMobile')?.addEventListener('click',()=>showScreen('settings'));$('mobileMenuBtn')?.addEventListener('click',()=>openModal('moreModal'));
 $('startBtn').onclick=()=>{resetTest();showScreen('about')};$('historyNewBtn').onclick=()=>{resetTest();showScreen('about')};
-$('quickPractice').onclick=()=>openModal('mockModal',renderMockBuilder);
-$('quickUpload').onclick=()=>openModal('pdfQuizModal',renderPdfQuizBuilder);
-$('quickMyTests').onclick=()=>openModal('practiceMyModal',renderPracticeMyBuilder);
-$('homePlanner')?.addEventListener('click',e=>{e.preventDefault();showScreen('planner')});
-$('generateMock').onclick=()=>openModal('mockModal',renderMockBuilder);$('uploadQuiz').onclick=()=>openModal('pdfQuizModal',renderPdfQuizBuilder);$('practiceMyTests').onclick=()=>openModal('practiceMyModal',renderPracticeMyBuilder);
+$('generateMock')?.addEventListener('click',()=>openModal('mockModal',renderMockBuilder));$('uploadQuiz')?.addEventListener('click',()=>openModal('pdfQuizModal',renderPdfQuizBuilder));$('practiceMyTests')?.addEventListener('click',()=>openModal('practiceMyModal',renderPracticeMyBuilder));
+$('mistakeNotebookHome')?.addEventListener('click',()=>showScreen('mistakeNotebook'));
+$('morePracticeMistakes')?.addEventListener('click',()=>{closeModal('moreModal');openModal('practiceMyModal',renderPracticeMyBuilder)});
+['moreNcert','moreGoals','moreComparison','moreRevision','moreWeakness','moreStudyMate'].forEach(id=>$(id)?.addEventListener('click',()=>toast('This feature is in the StudyMate blueprint and is ready for the next build.')));
+document.querySelectorAll('#moreModal [data-screen]').forEach(b=>b.addEventListener('click',()=>{closeModal('moreModal');showScreen(b.dataset.screen)}));
 function resetTest(){state.test=null;state.pdf=null;state.pdfFile=null;state.current=0;state.questions=[];state.questionMap=new Map();$('aboutForm').reset();$('syllabusArea').innerHTML='';$('pdfChoiceArea').innerHTML=''}
 $('testType').addEventListener('change',renderSyllabusUI);
 function chapterCheckboxes(subject){return SYLLABUS[subject].map((c,i)=>`<label class="chapter-item"><input type="checkbox" value="${escapeHtml(c)}" data-subject="${subject}" data-index="${i}"><span>${escapeHtml(c)}</span></label>`).join('')}
@@ -237,49 +237,103 @@ async function startMyPractice(){
  const want={i:$('pmIncorrect').checked,s:$('pmSilly').checked,k:$('pmSkipped').checked,t:$('pmTopics').checked};
  if(!Object.values(want).some(Boolean))return alert('Choose at least one category.');
  for(const r of h){
-   for(const q of r.questions){
+   for(const q of (r.questions||[])){
      if((want.i&&q.status==='Incorrect')||(want.s&&q.silly)||(want.k&&q.status==='Skipped')||(want.t&&q.topic))pool.push({record:r,original:q});
    }
  }
  if(!pool.length)return alert('No matching questions found yet.');
- const n=Math.min(Number($('pmCount').value),pool.length),chosen=pool.slice(0,n);
- const withPdfs=[];
+ const n=Math.min(Number($('pmCount').value),pool.length),chosen=pool.slice(0,n),withPdfs=[];
  for(const item of chosen){
    let pdf=null,info=null;
-   try{const blob=await getPdfBlob(item.record.id);if(blob&&pdfjsLib){pdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;const map=await extractPdfMap(pdf);info=map.get(item.original.number)}}catch(e){console.warn('Could not reopen saved PDF',e)}
-   withPdfs.push({number:item.original.number,pdf,info,previous:item.original,status:null,recordId:item.record.id,recordName:item.record.name});
+   if(item.record.hasPdf){
+     try{
+       const blob=await getPdfBlob(item.record.id);
+       if(!blob)throw new Error('Saved PDF not found');
+       if(!pdfjsLib)throw new Error('PDF engine unavailable');
+       pdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;
+       const map=await extractPdfMap(pdf);
+       info=map.get(Number(item.original.number));
+       if(!info)throw new Error(`Question ${item.original.number} was not found in the saved PDF`);
+     }catch(e){console.warn('Could not reopen saved PDF',e);return alert(`Could not load the original PDF for Q${item.original.number} from “${item.record.name}”. The PDF may have been removed from this browser.`)}
+   }
+   withPdfs.push({key:`${item.record.id}:${item.original.number}`,number:item.original.number,pdf,info,previous:item.original,status:null,recordId:item.record.id,recordName:item.record.name});
  }
  closeModal('practiceMyModal');
  state.practiceQuiz={title:'Practice from My Tests',questions:withPdfs,index:0,answers:{},historyMode:true};
- renderHistoryPracticeQuiz();
+ await renderHistoryPracticeQuiz();
 }
 
-/* PDF persistence: keep uploaded papers in IndexedDB so History/Practice can reopen them without putting large blobs in localStorage. */
-const PDF_DB='StudyMatePDFs',PDF_STORE='papers';
-function openPdfDb(){return new Promise((resolve,reject)=>{const r=indexedDB.open(PDF_DB,1);r.onupgradeneeded=()=>r.result.createObjectStore(PDF_STORE);r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error)})}
-async function savePdfBlob(id,file){try{const db=await openPdfDb();await new Promise((res,rej)=>{const tx=db.transaction(PDF_STORE,'readwrite');tx.objectStore(PDF_STORE).put(file,id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});db.close()}catch(e){console.warn('PDF persistence unavailable',e)}}
-async function getPdfBlob(id){const db=await openPdfDb();const out=await new Promise((res,rej)=>{const tx=db.transaction(PDF_STORE,'readonly');const r=tx.objectStore(PDF_STORE).get(id);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});db.close();return out}
+/* PDF persistence: uploaded test papers are stored locally in IndexedDB.
+   IndexedDB is the correct browser-local storage for large PDF Blobs; localStorage is too small.
+   Every test gets its own PDF record, so Redo My Mistakes can reopen the exact source PDF later. */
+const PDF_DB='StudyMatePDFs',PDF_STORE='papers',PDF_DB_VERSION=2;
+function openPdfDb(){return new Promise((resolve,reject)=>{
+  const r=indexedDB.open(PDF_DB,PDF_DB_VERSION);
+  r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(PDF_STORE))db.createObjectStore(PDF_STORE)};
+  r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error||new Error('IndexedDB unavailable'));
+})}
+async function savePdfBlob(id,file){
+  const db=await openPdfDb();
+  await new Promise((res,rej)=>{const tx=db.transaction(PDF_STORE,'readwrite');tx.objectStore(PDF_STORE).put({blob:file,name:file.name,size:file.size,type:file.type,savedAt:Date.now()},id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error||new Error('PDF save failed'));tx.onabort=()=>rej(tx.error||new Error('PDF save aborted'))});
+  const saved=await new Promise((res,rej)=>{const tx=db.transaction(PDF_STORE,'readonly');const req=tx.objectStore(PDF_STORE).get(id);req.onsuccess=()=>res(req.result);req.onerror=()=>rej(req.error)});
+  db.close();
+  if(!saved?.blob)throw new Error('PDF could not be verified after local save');
+  return true;
+}
+async function getPdfBlob(id){
+  const db=await openPdfDb();
+  const out=await new Promise((res,rej)=>{const tx=db.transaction(PDF_STORE,'readonly');const req=tx.objectStore(PDF_STORE).get(id);req.onsuccess=()=>res(req.result);req.onerror=()=>rej(req.error)});
+  db.close();
+  return out?.blob||out||null;
+}
 
 async function renderHistoryPracticeQuiz(){
  const d=state.practiceQuiz;if(!d)return;const q=d.questions[d.index];
  let body='';
  if(q.pdf&&q.info)body='<div class="quiz-question" id="practiceHistoryViewer"><div class="viewer-placeholder">Loading original question…</div></div>';
  else body='<div class="quiz-question"><div class="viewer-placeholder">Original question PDF is not available on this device. You can still record the reattempt status.</div></div>';
- const current=d.answers[q.number]||'';
+ const current=d.answers[q.key]||'';
  $('practiceScreen').innerHTML=`<div class="page-head"><div><span class="eyebrow">PRACTICE FROM MY TESTS</span><h2>Q${q.number}</h2><div class="small-muted">${escapeHtml(q.recordName)} • Previous: ${escapeHtml(q.previous.status)}${q.previous.silly?' • Silly mistake':''}</div></div><button id="exitHistoryPractice" class="secondary">Exit</button></div>${body}<div class="report-card"><h3>How did your reattempt go?</h3><div class="status-options"><label><input type="radio" name="practiceStatus" value="Correct" ${current==='Correct'?'checked':''}><span class="correct">✓<b>Correct</b></span></label><label><input type="radio" name="practiceStatus" value="Incorrect" ${current==='Incorrect'?'checked':''}><span class="incorrect">×<b>Incorrect</b></span></label><label><input type="radio" name="practiceStatus" value="Skipped" ${current==='Skipped'?'checked':''}><span class="skipped">−<b>Skipped</b></span></label></div></div><div class="actions between"><button id="hpPrev" class="secondary">← Previous</button><button id="hpNext" class="primary">${d.index===d.questions.length-1?'Finish':'Next →'}</button></div>`;
- document.querySelectorAll('input[name="practiceStatus"]').forEach(b=>b.onchange=()=>{d.answers[q.number]=b.value});
+ document.querySelectorAll('input[name="practiceStatus"]').forEach(b=>b.onchange=()=>{d.answers[q.key]=b.value});
  $('exitHistoryPractice').onclick=()=>{state.practiceQuiz=null;showScreen('practice')};
  $('hpPrev').onclick=()=>{if(d.index>0){d.index--;renderHistoryPracticeQuiz()}};
  $('hpNext').onclick=()=>{if(d.index<d.questions.length-1){d.index++;renderHistoryPracticeQuiz()}else finishHistoryPractice()};
  if(q.pdf&&q.info)await renderHistoryPdfQuestion(q);
 }
 async function renderHistoryPdfQuestion(q){const el=$('practiceHistoryViewer');try{const page=await q.pdf.getPage(q.info.pageNo),scale=1.25,vp=page.getViewport({scale}),x0=q.info.x0*scale,x1=q.info.x1*scale,top=q.info.top*scale,bottom=q.info.bottom*scale,canvas=document.createElement('canvas');canvas.width=Math.ceil(x1-x0);canvas.height=Math.ceil(bottom-top);await page.render({canvasContext:canvas.getContext('2d'),viewport:vp,transform:[1,0,0,1,-x0,-top]}).promise;el.innerHTML='';el.appendChild(canvas)}catch(e){el.innerHTML='<div class="viewer-placeholder">Could not render this question.</div>'}}
-function finishHistoryPractice(){const d=state.practiceQuiz;const attempts=[];d.questions.forEach(q=>{if(d.answers[q.number])attempts.push({testId:q.recordId,question:q.number,previousStatus:q.previous.status,currentStatus:d.answers[q.number],date:new Date().toISOString()})});const all=JSON.parse(localStorage.getItem(LS.practice)||'[]');localStorage.setItem(LS.practice,JSON.stringify([...attempts,...all].slice(0,500)));const improved=attempts.filter(x=>x.previousStatus!=='Correct'&&x.currentStatus==='Correct').length;state.practiceQuiz=null;showScreen('practice');toast(improved?`Practice complete — ${improved} question${improved===1?'':'s'} improved to Correct.`:'Practice complete. Your reattempts were saved.')}
+function finishHistoryPractice(){
+ const d=state.practiceQuiz,attempts=[];
+ d.questions.forEach(q=>{const current=d.answers[q.key];if(current)attempts.push({key:q.key,testId:q.recordId,question:q.number,previousStatus:q.previous.status,currentStatus:current,date:new Date().toISOString()})});
+ const all=JSON.parse(localStorage.getItem(LS.practice)||'[]');
+ localStorage.setItem(LS.practice,JSON.stringify([...attempts,...all].slice(0,500)));
+ const improved=attempts.filter(x=>x.previousStatus!=='Correct'&&x.currentStatus==='Correct').length;
+ state.practiceQuiz=null;showScreen('practice');
+ toast(improved?`Practice complete — ${improved} question${improved===1?'':'s'} improved to Correct.`:'Practice complete. Your reattempts were saved.');
+}
+/* ===== Day Summary ===== */
+const DAY_SUMMARY_KEY='studymate_day_summaries_v1';
+function getDaySummaries(){try{return JSON.parse(localStorage.getItem(DAY_SUMMARY_KEY)||'{}')}catch{return{}}}
+function saveDaySummaries(x){localStorage.setItem(DAY_SUMMARY_KEY,JSON.stringify(x))}
+function renderDaySummary(){const all=getDaySummaries(),today=new Date().toISOString().slice(0,10),d=all[today]||{study:'',questions:'',time:'',reflection:''};$('daySummaryContent').innerHTML=`<form id="daySummaryForm" class="panel day-summary-form"><div class="field"><label>📚 What did you study?</label><textarea id="dsStudy" rows="4" placeholder="e.g. Physics — Kinematics; Chemistry — Chemical Bonding; Biology — Cell">${escapeHtml(d.study)}</textarea></div><div class="two-col"><div class="field"><label>❓ Questions practiced</label><input id="dsQuestions" type="number" min="0" value="${escapeHtml(d.questions)}" placeholder="e.g. 260"></div><div class="field"><label>⏱️ Effective study time</label><input id="dsTime" value="${escapeHtml(d.time)}" placeholder="e.g. 6h 25m"></div></div><div class="field"><label>💭 How was your day? <span class="small-muted">(optional)</span></label><textarea id="dsReflection" rows="3" placeholder="A short reflection…">${escapeHtml(d.reflection)}</textarea></div><div class="actions"><button class="primary">Save Today's Summary ✓</button></div></form><div class="report-card"><div class="tracker-head"><div><h3>Recent Days</h3><span class="small-muted">Your self-recorded study history.</span></div></div><div class="day-summary-history">${Object.entries(all).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,14).map(([date,x])=>`<div class="day-summary-row"><strong>${new Date(date+'T00:00:00').toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'})}</strong><span>${escapeHtml(x.study||'—')}</span><b>${escapeHtml(x.questions||'0')} Q</b><b>${escapeHtml(x.time||'—')}</b></div>`).join('')||'<div class="empty">Save your first day summary.</div>'}</div></div>`;$('daySummaryForm').onsubmit=e=>{e.preventDefault();all[today]={study:$('dsStudy').value.trim(),questions:Number($('dsQuestions').value||0),time:$('dsTime').value.trim(),reflection:$('dsReflection').value.trim(),savedAt:new Date().toISOString()};saveDaySummaries(all);renderDaySummary();toast('Day summary saved ✓')}}
+
+/* ===== Mistake Notebook ===== */
+async function renderMistakeNotebook(){const h=getHistory(),items=[];h.forEach(r=>(r.questions||[]).forEach(q=>{if(q.status!=='Correct'||q.silly)items.push({record:r,q})}));const box=$('mistakeNotebookContent');if(!items.length){box.innerHTML='<div class="empty">No mistakes yet. Complete a test analysis and your mistakes will appear here.</div>';return}box.innerHTML=`<div class="mistake-list">${items.map((it,i)=>`<article class="mistake-entry"><div class="mistake-entry-head"><div><strong>Q${it.q.number}</strong><span>${escapeHtml(it.record.name)}</span></div><div class="mistake-tags"><span class="badge ${String(it.q.status||'').toLowerCase()}">${it.q.silly?'Silly Mistake':escapeHtml(it.q.status)}</span>${it.q.topic?`<span class="topic-pill">${escapeHtml(it.q.topic)}</span>`:'<span class="topic-pill">Topic not recorded</span>'}</div></div><div class="mistake-question-viewer" id="mistakeViewer_${i}"><div class="viewer-placeholder">Loading exact PDF question…</div></div></article>`).join('')}</div><div class="mistake-practice-cta"><h3>Ready to fix your mistakes?</h3><p>Practice the questions above without changing your original test result.</p><button class="primary" id="notebookPracticeBtn">🔥 Practice My Mistakes</button></div>`;$('notebookPracticeBtn').onclick=()=>openModal('practiceMyModal',renderPracticeMyBuilder);for(let i=0;i<items.length;i++)renderMistakeEntryPdf(items[i],$('mistakeViewer_'+i));}
+async function renderMistakeEntryPdf(item,el){if(!el)return;if(!item.record.hasPdf){el.innerHTML='<div class="viewer-placeholder">This test was analysed without a saved PDF.</div>';return}try{const blob=await getPdfBlob(item.record.id);if(!blob)throw new Error('missing');const pdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;const map=await extractPdfMap(pdf),info=map.get(Number(item.q.number));if(!info)throw new Error('question not found');const page=await pdf.getPage(info.pageNo),scale=1.25,vp=page.getViewport({scale}),x0=info.x0*scale,x1=info.x1*scale,top=info.top*scale,bottom=info.bottom*scale,canvas=document.createElement('canvas');canvas.width=Math.ceil(x1-x0);canvas.height=Math.ceil(bottom-top);await page.render({canvasContext:canvas.getContext('2d'),viewport:vp,transform:[1,0,0,1,-x0,-top]}).promise;el.innerHTML='';el.appendChild(canvas)}catch(e){console.warn(e);el.innerHTML='<div class="viewer-placeholder">Could not load the exact PDF cutout. The original PDF may have been removed from this browser.</div>'}}
+
+/* ===== Backup & Restore: local data + original PDF blobs ===== */
+async function readAllPdfRecords(){const db=await openPdfDb();const out=await new Promise((res,rej)=>{const tx=db.transaction(PDF_STORE,'readonly'),req=tx.objectStore(PDF_STORE).getAll();req.onsuccess=()=>res(req.result||[]);req.onerror=()=>rej(req.error)});db.close();return out}
+function blobToDataURL(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(r.error);r.readAsDataURL(blob)})}
+function dataURLToBlob(data){const [head,b64]=data.split(',');const mime=(head.match(/data:(.*?);/)||[])[1]||'application/octet-stream';const bin=atob(b64),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return new Blob([u],{type:mime})}
+async function makeBackup(){const pdfs=await readAllPdfRecords(),pdfData=[];for(const x of pdfs)pdfData.push({...x,blob:await blobToDataURL(x.blob)});const payload={format:'StudyMate Backup',version:1,createdAt:new Date().toISOString(),localStorage:Object.fromEntries(Object.keys(localStorage).map(k=>[k,localStorage.getItem(k)])),pdfs:pdfData};const blob=new Blob([JSON.stringify(payload)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`StudyMate_Backup_${new Date().toISOString().slice(0,10)}.smbackup`;a.click();URL.revokeObjectURL(url);toast('Backup created successfully ✓')}
+async function restoreBackup(file){if(!file)return;try{const payload=JSON.parse(await file.text());if(payload.format!=='StudyMate Backup')throw new Error('Invalid backup file');if(!confirm('Restore this backup? Current StudyMate data will be replaced.'))return;localStorage.clear();Object.entries(payload.localStorage||{}).forEach(([k,v])=>localStorage.setItem(k,v));const db=await openPdfDb();await new Promise((res,rej)=>{const tx=db.transaction(PDF_STORE,'readwrite');tx.objectStore(PDF_STORE).clear();tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});for(const x of (payload.pdfs||[])){await new Promise((res,rej)=>{const tx=db.transaction(PDF_STORE,'readwrite');tx.objectStore(PDF_STORE).put({blob:dataURLToBlob(x.blob),name:x.name,size:x.size,type:x.type,savedAt:x.savedAt},x.id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error)});}db.close();toast('Restore complete. Reloading…');setTimeout(()=>location.reload(),700)}catch(e){console.error(e);alert('Could not restore this backup. The file may be damaged or from an incompatible StudyMate version.')}}
+
 /* Security */
 async function hash(text){const data=new TextEncoder().encode(text);const buf=await crypto.subtle.digest('SHA-256',data);return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('')}
 function getSecurity(){try{return JSON.parse(localStorage.getItem(LS.security)||'null')}catch{return null}}
 async function saveSecurity(pin,questions){const payload={enabled:true,pinHash:await hash(pin),questions:await Promise.all(questions.map(async x=>({q:x.q,a:await hash(x.a.trim().toLowerCase())}))),failed:0,lockUntil:0,auto:'immediately'};localStorage.setItem(LS.security,JSON.stringify(payload));}
-function renderSettings(){const s=getSecurity();$('settingsContent').innerHTML=`<div class="settings-row"><div><b>🔐 App Lock</b><div class="small-muted">Protect StudyMate with your own passcode.</div></div><label class="switch"><input id="securityToggle" type="checkbox" ${s?.enabled?'checked':''}><span></span></label></div>${s?.enabled?`<div class="settings-row"><div><b>Change Passcode</b><div class="small-muted">Use recovery or current passcode.</div></div><button class="secondary" id="changePinBtn">Change</button></div><div class="settings-row"><div><b>Recovery Questions</b><div class="small-muted">Three answers are required to reset a forgotten passcode.</div></div><button class="secondary" id="changeRecoveryBtn">Change</button></div><div class="settings-row"><div><b>Auto Lock</b><div class="small-muted">Choose when the app locks.</div></div><select id="autoLock" style="width:140px"><option value="immediately">Immediately</option><option value="1m">After 1 minute</option><option value="5m">After 5 minutes</option><option value="15m">After 15 minutes</option><option value="never">Never</option></select></div>`:''}`;$('securityToggle').onchange=async e=>{if(e.target.checked)setupSecurity();else if(confirm('Disable App Lock?')){localStorage.removeItem(LS.security);toast('App Lock disabled.')}else{e.target.checked=true}};if(s?.enabled){$('autoLock').value=s.auto||'immediately';$('autoLock').onchange=e=>{const x=getSecurity();x.auto=e.target.value;localStorage.setItem(LS.security,JSON.stringify(x))};$('changePinBtn').onclick=()=>changePinFlow();$('changeRecoveryBtn').onclick=()=>setupRecovery(true)}}
+function applyTheme(theme){document.documentElement.dataset.theme=theme;localStorage.setItem('studymate_theme',theme)}
+function renderSettings(){const s=getSecurity(),theme=localStorage.getItem('studymate_theme')||'system';$('settingsContent').innerHTML=`<div class="settings-stack"><div class="report-card"><h3>🔐 Security</h3><div class="settings-row"><div><b>App Lock</b><div class="small-muted">Protect StudyMate with your passcode.</div></div><label class="switch"><input id="securityToggle" type="checkbox" ${s?.enabled?'checked':''}><span></span></label></div>${s?.enabled?`<div class="settings-row"><div><b>Change Passcode</b></div><button class="secondary" id="changePinBtn">Change</button></div><div class="settings-row"><div><b>Security Questions</b><div class="small-muted">Three recovery answers.</div></div><button class="secondary" id="changeRecoveryBtn">Change</button></div><div class="settings-row"><div><b>Auto Lock</b></div><select id="autoLock" style="width:150px"><option value="immediately">Immediately</option><option value="1m">1 minute</option><option value="5m">5 minutes</option><option value="15m">15 minutes</option><option value="never">Never</option></select></div>`:''}</div><div class="report-card"><h3>💾 Backup & Restore</h3><p class="small-muted">Backup your StudyMate data and the original PDFs used for exact mistake-question cutouts.</p><div class="actions"><button class="primary" id="backupBtn">Create Backup</button><button class="secondary" id="restoreBtn">Restore Backup</button></div></div><div class="report-card"><h3>🎨 Appearance</h3><div class="theme-options"><button class="${theme==='light'?'active':''}" data-theme-choice="light">☀️ Light</button><button class="${theme==='dark'?'active':''}" data-theme-choice="dark">🌙 Dark</button><button class="${theme==='system'?'active':''}" data-theme-choice="system">⚙️ System</button></div></div><div class="report-card"><h3>🩺 NEET 2027 Countdown</h3><p class="small-muted">NTA has not published the NEET UG 2027 date in its current notice archive. You can set your target date here.</p><input id="neetTargetInput" type="datetime-local" value="${new Date(getNeetTarget()).toISOString().slice(0,16)}"><button class="primary" id="saveNeetTarget" style="margin-top:10px">Save Target Date</button></div></div>`;$('securityToggle').onchange=async e=>{if(e.target.checked)setupSecurity();else if(confirm('Disable App Lock?')){localStorage.removeItem(LS.security);toast('App Lock disabled.');renderSettings()}else e.target.checked=true};if(s?.enabled){$('autoLock').value=s.auto||'immediately';$('autoLock').onchange=e=>{const x=getSecurity();x.auto=e.target.value;localStorage.setItem(LS.security,JSON.stringify(x))};$('changePinBtn').onclick=()=>changePinFlow();$('changeRecoveryBtn').onclick=()=>setupRecovery(true)}$('backupBtn').onclick=makeBackup;$('restoreBtn').onclick=()=>{$('restoreFileInput').value='';$('restoreFileInput').click()};$('restoreFileInput').onchange=e=>restoreBackup(e.target.files[0]);document.querySelectorAll('[data-theme-choice]').forEach(b=>b.onclick=()=>{applyTheme(b.dataset.themeChoice);renderSettings()});$('saveNeetTarget').onclick=()=>{const v=$('neetTargetInput').value;if(!v)return;localStorage.setItem('studymate_neet_target',new Date(v).toISOString());renderCountdown();toast('Countdown target updated ✓')}}
+
 async function setupSecurity(){const pin=prompt('Create a 4–6 digit passcode:');if(!/^\d{4,6}$/.test(pin||'')){toast('Passcode must be 4–6 digits.');renderSettings();return}const confirmPin=prompt('Confirm passcode:');if(pin!==confirmPin){toast('Passcodes do not match.');renderSettings();return}const qs=[];for(let i=1;i<=3;i++){const q=prompt(`Recovery question ${i}:`);if(!q){toast('All 3 questions are required.');renderSettings();return}const a=prompt(`Answer for question ${i}:`);if(!a){toast('All 3 answers are required.');renderSettings();return}qs.push({q,a})}await saveSecurity(pin,qs);toast('App Lock enabled.');renderSettings()}
 async function setupRecovery(replace=false){const s=getSecurity();if(!s)return;const qs=[];for(let i=1;i<=3;i++){const q=prompt(`New recovery question ${i}:`);const a=prompt(`Answer for question ${i}:`);if(!q||!a)return toast('Recovery setup cancelled.');qs.push({q,a})}s.questions=await Promise.all(qs.map(async x=>({q:x.q,a:await hash(x.a.trim().toLowerCase())})));localStorage.setItem(LS.security,JSON.stringify(s));toast('Recovery questions updated.');renderSettings()}
 async function changePinFlow(){const s=getSecurity();if(!s)return;const old=prompt('Enter current passcode:');if(!old||await hash(old)!==s.pinHash)return toast('Incorrect passcode.');const p=prompt('New 4–6 digit passcode:');const c=prompt('Confirm new passcode:');if(!/^\d{4,6}$/.test(p)||p!==c)return toast('Invalid or mismatched passcode.');s.pinHash=await hash(p);localStorage.setItem(LS.security,JSON.stringify(s));toast('Passcode changed.')}
@@ -346,6 +400,8 @@ document.addEventListener('click',e=>{
 // Planner is intentionally checklist-based and has NO reset button.
 const PLANNER_KEY='studymate_success_planner_v1';
 const PLANNER_STEPS=[
+  {key:'lectures',label:'Watched Lectures'},
+  {key:'notes',label:'Complete Notes'},
   {key:'ncert',label:'NCERT Reading'},
   {key:'dpp',label:'DPP'},
   {key:'module',label:'Module / PYQs'},
@@ -361,8 +417,15 @@ function getPlanner(){try{return JSON.parse(localStorage.getItem(PLANNER_KEY)||'
 function savePlanner(x){localStorage.setItem(PLANNER_KEY,JSON.stringify(x))}
 function plannerChapterStatus(data,s,c){
   const x=data[`${s}::${c}`]||{};
-  const checked=PLANNER_STEPS.slice(0,-1).filter(st=>!!x[st.key]).length;
-  return {...x,checked,complete:!!x.mastered};
+  const total=PLANNER_STEPS.length;
+  const checked=PLANNER_STEPS.filter(st=>!!x[st.key]).length;
+  const pct=Math.round(checked/total*100);
+  const complete=!!x.mastered;
+  let status='Not Started';
+  if(complete || checked===total) status='Mastered';
+  else if(pct>=75) status='On Track';
+  else if(checked>0) status='Needs Work';
+  return {...x,checked,total,pct,complete,status};
 }
 function renderSuccessPlanner(){
   const data=getPlanner();
@@ -370,32 +433,42 @@ function renderSuccessPlanner(){
   SUBJECTS.forEach(s=>SYLLABUS[s].forEach(c=>{
     total++;const st=plannerChapterStatus(data,s,c);
     if(st.mastered) mastered++;
-    else if(st.checked>=5) completed++;
+    else if(st.status==='On Track') completed++;
     else if(st.checked>0) needs++;
     else notStarted++;
   }));
-  const progress=total?Math.round((completed+mastered)/total*100):0;
+  const progress=total?Math.round((mastered+completed)/total*100):0;
   $('plannerContent').innerHTML=`
     <div class="planner-hero report-card">
-      <div class="planner-hero-copy"><span class="eyebrow">FOCUS • PLAN • STUDY • ACHIEVE</span><h3>Build your NEET 2027 success, one chapter at a time.</h3><p>Tick each milestone as you complete it. Your plan stays saved on this device.</p></div>
+      <div class="planner-hero-copy"><span class="eyebrow">PLAN • STUDY • REVISE • MASTER</span><h3>NEET Success Planner</h3><p>Turn every chapter into a clear study journey. Your progress is saved automatically on this device.</p></div>
       <div class="planner-progress" style="--planner-pct:${progress}%"><strong>${progress}%</strong><span>overall</span></div>
     </div>
     <div class="planner-stats report-card">
-      <div><strong>${total}</strong><small>Total Chapters</small></div><div><strong>${completed+mastered}</strong><small>On Track</small></div><div><strong>${needs}</strong><small>Needs Work</small></div><div><strong>${notStarted}</strong><small>Not Started</small></div><div><strong>${mastered}</strong><small>Mastered</small></div>
+      <div><strong>${total}</strong><small>Total Chapters</small></div><div><strong>${completed}</strong><small>On Track</small></div><div><strong>${needs}</strong><small>In Progress</small></div><div><strong>${notStarted}</strong><small>Not Started</small></div><div><strong>${mastered}</strong><small>Mastered</small></div>
     </div>
     <div class="planner-tabs">${SUBJECTS.map((s,i)=>`<button type="button" class="planner-tab ${i===0?'active':''}" data-planner-sub="${escapeHtml(s)}">${escapeHtml(s)}</button>`).join('')}</div>
     <div id="plannerPanel"></div>
-    <div class="planner-note report-card"><strong>🌱 Small, consistent actions compound.</strong><span>Use the revision columns to keep chapters alive instead of studying them once and forgetting them.</span></div>`;
+    <div class="planner-note report-card"><strong>🌱 Small actions become big results.</strong><span>Complete the milestones honestly. There is no reset button—your planner is designed to build a continuous study record.</span></div>`;
+
   const renderSubject=(subject)=>{
     const rows=SYLLABUS[subject].map((chapter,i)=>{
       const key=`${subject}::${chapter}`, x=data[key]||{}, st=plannerChapterStatus(data,subject,chapter);
-      const cls=st.mastered?'mastered':st.checked>=5?'ontrack':st.checked?'needswork':'notstarted';
+      const cls=st.status.toLowerCase().replace(' ','');
       const checks=PLANNER_STEPS.map(step=>`<label class="planner-check ${x[step.key]?'checked':''}" title="${escapeHtml(step.label)}"><input type="checkbox" data-planner-key="${escapeHtml(key)}" data-planner-step="${step.key}" ${x[step.key]?'checked':''}><span>${x[step.key]?'✓':''}</span></label>`).join('');
-      return `<div class="planner-row ${cls}"><div class="planner-number">${i+1}</div><div class="planner-chapter"><strong>${escapeHtml(chapter)}</strong><small>${st.mastered?'Mastered':st.checked>=5?'On Track':st.checked?'Needs Work':'Not Started'}</small></div>${checks}<div class="planner-status">${st.mastered?'🏆 Mastered':st.checked>=5?'🟢 On Track':st.checked?'🟡 Needs Work':'🔴 Not Started'}</div></div>`;
+      const mobileSteps=PLANNER_STEPS.map(step=>`<label class="planner-mobile-step ${x[step.key]?'checked':''}"><span><b>${escapeHtml(step.label)}</b>${step.sub?`<small>${escapeHtml(step.sub)}</small>`:''}</span><input type="checkbox" data-planner-key="${escapeHtml(key)}" data-planner-step="${step.key}" ${x[step.key]?'checked':''}><i>${x[step.key]?'✓':''}</i></label>`).join('');
+      return `<div class="planner-row ${cls}"><div class="planner-number">${i+1}</div><div class="planner-chapter"><strong>${escapeHtml(chapter)}</strong><small>${st.checked}/${st.total} milestones • ${st.status}</small></div>${checks}<div class="planner-status">${st.mastered?'🏆 Mastered':st.status==='On Track'?'🟢 On Track':st.checked?'🟡 Needs Work':'🔴 Not Started'}</div></div>
+      <article class="planner-mobile-card ${cls}"><div class="planner-mobile-card-head"><div><span class="planner-number-badge">${i+1}</span><strong>${escapeHtml(chapter)}</strong><small>${st.checked}/${st.total} milestones completed</small></div><span class="planner-mobile-status">${st.mastered?'🏆 Mastered':st.status==='On Track'?'🟢 On Track':st.checked?'🟡 Needs Work':'🔴 Not Started'}</span></div><div class="planner-mobile-progress"><span style="width:${st.pct}%"></span></div><div class="planner-mobile-steps">${mobileSteps}</div></article>`;
     }).join('');
-    $('plannerPanel').innerHTML=`<div class="report-card planner-table-card"><div class="planner-table-head"><div><h3>${escapeHtml(subject)}</h3><span class="small-muted">Complete each column when you genuinely finish that milestone.</span></div><span class="planner-legend">✓ completed • 🏆 mastered</span></div><div class="planner-table-wrap"><div class="planner-header"><div>No.</div><div>Chapter</div>${PLANNER_STEPS.map(st=>`<div>${escapeHtml(st.label)}${st.sub?`<small>${escapeHtml(st.sub)}</small>`:''}</div>`).join('')}<div>Status</div></div>${rows}</div></div>`;
-    $('plannerPanel').querySelectorAll('[data-planner-key]').forEach(cb=>cb.onchange=()=>{
-      const all=getPlanner();const item=all[cb.dataset.plannerKey]||{};item[cb.dataset.plannerStep]=cb.checked;all[cb.dataset.plannerKey]=item;savePlanner(all);renderSuccessPlanner();setTimeout(()=>document.querySelector(`[data-planner-sub="${CSS.escape(subject)}"]`)?.click(),0);toast(cb.checked?'Milestone completed ✓':'Milestone unchecked');
+    $('plannerPanel').innerHTML=`<div class="report-card planner-table-card"><div class="planner-table-head"><div><h3>${escapeHtml(subject)}</h3><span class="small-muted">Tap any milestone to update your chapter progress.</span></div><span class="planner-legend">${PLANNER_STEPS.length} milestones per chapter</span></div><div class="planner-desktop-wrap"><div class="planner-table-wrap"><div class="planner-header"><div>No.</div><div>Chapter</div>${PLANNER_STEPS.map(st=>`<div>${escapeHtml(st.label)}${st.sub?`<small>${escapeHtml(st.sub)}</small>`:''}</div>`).join('')}<div>Status</div></div>${rows.split(/(?=<article class="planner-mobile-card)/)[0]}</div></div><div class="planner-mobile-list">${SYLLABUS[subject].map((chapter,i)=>{
+      const key=`${subject}::${chapter}`, x=data[key]||{}, st=plannerChapterStatus(data,subject,chapter);
+      const mobileSteps=PLANNER_STEPS.map(step=>`<label class="planner-mobile-step ${x[step.key]?'checked':''}"><span><b>${escapeHtml(step.label)}</b>${step.sub?`<small>${escapeHtml(step.sub)}</small>`:''}</span><input type="checkbox" data-planner-key="${escapeHtml(key)}" data-planner-step="${step.key}" ${x[step.key]?'checked':''}><i>${x[step.key]?'✓':''}</i></label>`).join('');
+      return `<article class="planner-mobile-card ${st.status.toLowerCase().replace(' ','')}"><div class="planner-mobile-card-head"><div><span class="planner-number-badge">${i+1}</span><strong>${escapeHtml(chapter)}</strong><small>${st.checked}/${st.total} milestones completed</small></div><span class="planner-mobile-status">${st.mastered?'🏆 Mastered':st.status==='On Track'?'🟢 On Track':st.checked?'🟡 Needs Work':'🔴 Not Started'}</span></div><div class="planner-mobile-progress"><span style="width:${st.pct}%"></span></div><div class="planner-mobile-steps">${mobileSteps}</div></article>`;
+    }).join('')}</div></div>`;
+    bindPlannerChecks(subject);
+  };
+  const bindPlannerChecks=(subject)=>{
+    document.querySelectorAll('[data-planner-key]').forEach(cb=>cb.onchange=()=>{
+      const all=getPlanner();const item=all[cb.dataset.plannerKey]||{};item[cb.dataset.plannerStep]=cb.checked;all[cb.dataset.plannerKey]=item;savePlanner(all);renderSuccessPlanner();requestAnimationFrame(()=>document.querySelector(`[data-planner-sub="${CSS.escape(subject)}"]`)?.click());toast(cb.checked?'Milestone completed ✓':'Milestone unchecked');
     });
   };
   renderSubject('Physics');
@@ -462,3 +535,5 @@ function refreshHome(){
 
 // Ensure new screens are recognized by keyboard/back-style navigation.
 document.querySelectorAll('[data-screen]').forEach(b=>{b.addEventListener('click',()=>showScreen(b.dataset.screen))});
+
+applyTheme(localStorage.getItem('studymate_theme')||'system');
