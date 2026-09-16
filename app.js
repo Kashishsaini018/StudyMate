@@ -18,7 +18,20 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 function showScreen(name){SCREENS.forEach(s=>$(s+'Screen')?.classList.toggle('active',s===name));document.querySelectorAll('.nav-btn,[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));if(name==='home')refreshHome();if(name==='history')renderHistory();if(name==='reports')renderReports();if(name==='settings')renderSettings();if(name==='daySummary')renderDaySummary();if(name==='mistakeNotebook')renderMistakeNotebook();if(name==='planner')renderSuccessPlanner();if(name==='nextTest')renderNextTest();if(name==='ncert')renderNcert?.();if(name==='goals')renderDailyGoals();if(name==='comparison')renderTestComparison();if(name==='revision')renderIntelligentRevision();if(name==='weakness')renderSmartWeakness();if(name==='studymate')renderPersonalStudyMate();}
 document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));
 $('settingsBtn')?.addEventListener('click',()=>showScreen('settings'));$('settingsBtnMobile')?.addEventListener('click',()=>showScreen('settings'));$('mobileMenuBtn')?.addEventListener('click',()=>openModal('moreModal'));
-$('startBtn').onclick=()=>{resetTest();showScreen('about')};$('historyNewBtn').onclick=()=>{resetTest();showScreen('about')};
+$('.brand-wrap')?.addEventListener('click',()=>{if(state.test&&state.questions?.length&&document.getElementById('analysisScreen')?.classList.contains('active'))saveAnalysisDraft();showScreen('home')});
+$('startBtn').onclick=()=>{
+  const draft=getAnalysisDraft();
+  if(draft){
+    if(!confirm('An unfinished test is saved. Start a new test and replace that draft?'))return;
+    clearAnalysisDraft();
+  }
+  resetTest();showScreen('about');
+};
+$('historyNewBtn').onclick=()=>{
+  const draft=getAnalysisDraft();
+  if(draft&&!confirm('An unfinished test is saved. Start a new test and replace that draft?'))return;
+  clearAnalysisDraft();resetTest();showScreen('about');
+};
 $('generateMock')?.addEventListener('click',()=>openModal('mockModal',renderMockBuilder));$('uploadQuiz')?.addEventListener('click',()=>openModal('pdfQuizModal',renderPdfQuizBuilder));
 $('mistakeNotebookHome')?.addEventListener('click',()=>showScreen('mistakeNotebook'));
 $('nextTestHome')?.addEventListener('click',()=>showScreen('nextTest'));
@@ -27,6 +40,42 @@ $('mobileBottomNav')?.querySelectorAll('[data-screen]').forEach(b=>b.addEventLis
 
 document.querySelectorAll('#moreModal [data-screen]').forEach(b=>b.addEventListener('click',()=>{closeModal('moreModal');showScreen(b.dataset.screen)}));
 function resetTest(){state.test=null;state.pdf=null;state.pdfFile=null;state.current=0;state.questions=[];state.questionMap=new Map();$('aboutForm').reset();$('syllabusArea').innerHTML='';$('pdfChoiceArea').innerHTML=''}
+const ANALYSIS_DRAFT_KEY='studymate_analysis_draft_v1';
+function getAnalysisDraft(){try{return JSON.parse(localStorage.getItem(ANALYSIS_DRAFT_KEY)||'null')}catch{return null}}
+function clearAnalysisDraft(){localStorage.removeItem(ANALYSIS_DRAFT_KEY);renderResumeDraftCard?.()}
+let draftSaveTimer=null;
+function saveAnalysisDraft(){
+  if(!state.test||!state.questions?.length)return;
+  const draft={test:state.test,current:state.current,questions:state.questions,savedAt:new Date().toISOString()};
+  localStorage.setItem(ANALYSIS_DRAFT_KEY,JSON.stringify(draft));
+  renderResumeDraftCard?.();
+}
+function scheduleDraftSave(){clearTimeout(draftSaveTimer);draftSaveTimer=setTimeout(saveAnalysisDraft,180)}
+async function resumeAnalysisDraft(){
+  const draft=getAnalysisDraft();
+  if(!draft?.test||!Array.isArray(draft.questions)||!draft.questions.length){clearAnalysisDraft();return toast('No valid unfinished test was found.')}
+  state.test=draft.test;state.questions=draft.questions;state.current=Math.min(Math.max(0,Number(draft.current)||0),state.questions.length-1);state.pdf=null;state.pdfFile=null;state.questionMap=new Map();
+  try{
+    if(state.test.hasPdf){
+      const blob=await getPdfBlob(state.test.id);
+      if(!blob)throw new Error('Saved PDF not found');
+      if(!pdfjsLib)throw new Error('PDF engine unavailable');
+      state.pdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;
+      await buildQuestionMap();
+    }
+    await renderQuestion();showScreen('analysis');toast('Unfinished test resumed ✓');
+  }catch(e){console.error(e);toast('The saved test was found, but its PDF could not be reopened. You can continue without the PDF.');await renderQuestion();showScreen('analysis')}
+}
+function renderResumeDraftCard(){
+  const card=$('resumeTestCard');if(!card)return;
+  const d=getAnalysisDraft();
+  if(!d?.test){card.classList.add('hidden');return}
+  const done=(d.questions||[]).filter(q=>q.status).length,total=(d.questions||[]).length;
+  card.classList.remove('hidden');
+  card.innerHTML=`<div><span class="eyebrow">UNFINISHED TEST</span><strong>↩️ ${escapeHtml(d.test.name||'Test')}</strong><small>${done}/${total} questions analysed • Saved ${new Date(d.savedAt||Date.now()).toLocaleString()}</small></div><button class="primary" id="resumeTestBtn">Resume →</button>`;
+  $('resumeTestBtn').onclick=resumeAnalysisDraft;
+}
+window.addEventListener('beforeunload',()=>{if(state.test&&state.questions?.length)saveAnalysisDraft()});
 $('testType').addEventListener('change',renderSyllabusUI);
 function chapterCheckboxes(subject){return SYLLABUS[subject].map((c,i)=>`<label class="chapter-item"><input type="checkbox" value="${escapeHtml(c)}" data-subject="${subject}" data-index="${i}"><span>${escapeHtml(c)}</span></label>`).join('')}
 function renderSyllabusUI(){const type=$('testType').value,area=$('syllabusArea');area.innerHTML='';if(!type)return;
@@ -46,12 +95,32 @@ $('aboutForm').onsubmit=async e=>{e.preventDefault();const type=$('testType').va
  else {const checked=[...document.querySelectorAll('#allChapters input:checked')];if(!checked.length)return alert('Select at least one chapter.');const groups={};checked.forEach(x=>(groups[x.dataset.subject]??=[]).push(x.value));syllabus=Object.entries(groups).map(([s,c])=>`${s}: ${c.join(', ')}`).join('\n')}
  if(!syllabus)return alert('Please enter/select the syllabus.');const usePdf=document.querySelector('input[name="usePdf"]:checked')?.value;if(!usePdf)return alert('Choose whether to upload the PDF.');const revised=document.querySelector('input[name="revised"]:checked')?.value;
  state.test={id:uid(),name:$('testName').value.trim(),type,syllabus,revised,date:new Date().toISOString(),fileName:'',hasPdf:usePdf==='Yes'};
- if(usePdf==='Yes'){const file=$('pdfInput')?.files?.[0];if(!file)return alert('Please upload the PDF.');state.pdfFile=file;try{if(!pdfjsLib)throw new Error('PDF engine unavailable');await savePdfBlob(state.test.id,file);state.pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;await buildQuestionMap();const count=Math.max(1,state.detectedCount||180);state.questions=Array.from({length:count},(_,i)=>blankQuestion(i+1));state.test.fileName=file.name;toast(`Detected ${count} questions from the PDF.`)}catch(err){console.error(err);return alert('Could not read this PDF. Make sure it is a valid PDF and the PDF.js library can load.')}}
+ if(usePdf==='Yes'){const file=$('pdfInput')?.files?.[0];if(!file)return alert('Please upload the PDF.');state.pdfFile=file;try{if(!pdfjsLib)throw new Error('PDF engine unavailable');await savePdfBlob(state.test.id,file);state.pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;await buildQuestionMap();const count=Math.max(1,state.detectedCount||180);state.questions=Array.from({length:count},(_,i)=>blankQuestion(i+1));state.test.fileName=file.name;saveAnalysisDraft();toast(`Detected ${count} questions from the PDF.`)}catch(err){console.error(err);return alert('Could not read this PDF. Make sure it is a valid PDF and the PDF.js library can load.')}}
  else {const count=Number($('questionCount')?.value);if(!Number.isInteger(count)||count<1)return alert('Enter a valid number of questions.');state.questions=Array.from({length:count},(_,i)=>blankQuestion(i+1))}
+ saveAnalysisDraft();
  state.current=0;await renderQuestion();showScreen('analysis');};
 function blankQuestion(number){return{number,status:'',guessed:false,silly:false,reason:'',topic:''}}
 function getItemRect(item,viewport){const x=item.transform[4],y=item.transform[5],w=item.width||20,h=item.height||Math.abs(item.transform[3])||10;const p1=viewport.convertToViewportPoint(x,y),p2=viewport.convertToViewportPoint(x+w,y+h);return{x:Math.min(p1[0],p2[0]),top:Math.min(p1[1],p2[1]),bottom:Math.max(p1[1],p2[1]),right:Math.max(p1[0],p2[0])}}
-function findQuestionLabels(items,viewport,pageNo){const out=[];for(const item of items){const raw=(item.str||'').trim();if(!raw)continue;const re=/(?:^|\s)Q\s*([0-9]{1,3})(?=\s|$|[.)\]:])/gi;let m;while((m=re.exec(raw))){const r=getItemRect(item,viewport);out.push({number:Number(m[1]),...r,pageNo})}}return out}
+function findQuestionLabels(items,viewport,pageNo){
+ const out=[];
+ for(const item of items){
+   const raw=(item.str||'').replace(/\u00a0/g,' ').trim(); if(!raw)continue;
+   const candidates=[];
+   // Common printed labels: Q1, Q 1, Q.1, Q. 1, Question 1
+   for(const re of [/^Q\s*\.?\s*(\d{1,3})(?=\s|$|[.)\]:-])/i,/^Question\s*(?:No\.?\s*)?(\d{1,3})(?=\s|$|[.)\]:-])/i]){
+     const m=raw.match(re); if(m)candidates.push(Number(m[1]));
+   }
+   // Many coaching sheets use a plain numeric label: 1. / 1) / 1:
+   const nm=raw.match(/^(\d{1,3})\s*[.)](?=\s|$)/);
+   if(nm)candidates.push(Number(nm[1]));
+   const seen=new Set();
+   for(const number of candidates){
+     if(number<1||number>500||seen.has(number))continue; seen.add(number);
+     const r=getItemRect(item,viewport);out.push({number,...r,pageNo});
+   }
+ }
+ return out;
+}
 async function buildQuestionMap(){
   state.questionMap=new Map();
   let maxQ=0;
@@ -85,12 +154,21 @@ function sectionFor(n,total){if(total===180){if(n<=45)return'PHYSICS';if(n<=90)r
 async function renderQuestion(){const q=state.questions[state.current],total=state.questions.length;$('questionTitle').textContent=`Question ${q.number} / ${total}`;$('sectionLabel').textContent=sectionFor(q.number,total);$('progressText').textContent=`${q.number} / ${total}`;$('progressFill').style.width=`${(state.current+1)/total*100}%`;document.querySelectorAll('input[name="status"]').forEach(x=>x.checked=x.value===q.status);renderExtraFields();if(state.pdf)await renderExactQuestion(q.number);else renderNoPdfQuestion(q.number);updateNavButtons()}
 async function renderExactQuestion(num){const info=state.questionMap.get(num);if(!info){$('questionViewer').innerHTML=`<div class="viewer-placeholder"><strong>⚠️ Question ${num} could not be located automatically.</strong><div class="viewer-note">The app will not display a guessed/wrong question. You can still record the status below.</div></div>`;return}try{const page=await state.pdf.getPage(info.pageNo),scale=1.55,viewport=page.getViewport({scale}),x0=info.x0*scale,x1=info.x1*scale,top=info.top*scale,bottom=info.bottom*scale,w=Math.max(120,x1-x0),h=Math.max(90,bottom-top),canvas=document.createElement('canvas');canvas.width=Math.ceil(w);canvas.height=Math.ceil(h);await page.render({canvasContext:canvas.getContext('2d'),viewport,transform:[1,0,0,1,-x0,-top]}).promise;$('questionViewer').innerHTML='';const wrap=document.createElement('div');wrap.className='pdf-page-wrap';wrap.appendChild(canvas);$('questionViewer').appendChild(wrap)}catch(e){console.error(e);$('questionViewer').innerHTML='<div class="viewer-placeholder"><strong>⚠️ Could not render this question.</strong><div class="viewer-note">You can still record the status below.</div></div>'}}
 function renderNoPdfQuestion(num){$('questionViewer').innerHTML=`<div class="viewer-placeholder"><strong>Question ${num}</strong><div>No test paper uploaded.</div><div class="viewer-note">Record your answer status below.</div></div>`}
-function renderExtraFields(){const q=state.questions[state.current],box=$('questionExtra');if(!q.status){box.innerHTML='';return}if(q.status==='Correct'){box.innerHTML=`<div class="extra-panel"><label class="checkline"><input id="guessed" type="checkbox" ${q.guessed?'checked':''}> I Guessed the Answer</label></div>`;$('guessed').onchange=e=>q.guessed=e.target.checked;return}
- if(q.status==='Incorrect'){box.innerHTML=`<div class="extra-panel"><div class="field"><label>Was this a silly mistake?</label><div class="choice-row"><button type="button" class="choice-chip ${q.silly?'active':''}" id="sillyYes">Yes</button><button type="button" class="choice-chip ${!q.silly?'active':''}" id="sillyNo">No</button></div></div><div class="field"><label>Why did you get it wrong? ${q.silly?'':'<span class="required">*</span>'}</label><textarea id="reason" placeholder="Concept not clear, calculation error, misread question...">${escapeHtml(q.reason)}</textarea></div><div class="field" style="margin-bottom:0"><label>Topic <span class="small-muted">(optional)</span></label><input id="topic" value="${escapeHtml(q.topic)}" placeholder="e.g. Kinematics"></div></div>`;$('sillyYes').onclick=()=>{q.silly=true;renderExtraFields()};$('sillyNo').onclick=()=>{q.silly=false;renderExtraFields()};$('reason').oninput=e=>q.reason=e.target.value;$('topic').oninput=e=>q.topic=e.target.value;return}
- box.innerHTML=`<div class="extra-panel"><div class="field"><label>Why did you skip it? <span class="required">*</span></label><textarea id="reason" placeholder="Why did you skip this question?">${escapeHtml(q.reason)}</textarea></div><div class="field" style="margin-bottom:0"><label>Topic <span class="small-muted">(optional)</span></label><input id="topic" value="${escapeHtml(q.topic)}" placeholder="e.g. Genetics"></div></div>`;$('reason').oninput=e=>q.reason=e.target.value;$('topic').oninput=e=>q.topic=e.target.value}
+function renderExtraFields(){const q=state.questions[state.current],box=$('questionExtra');if(!q.status){box.innerHTML='';return}if(q.status==='Correct'){box.innerHTML=`<div class="extra-panel"><label class="checkline"><input id="guessed" type="checkbox" ${q.guessed?'checked':''}> I Guessed the Answer</label></div>`;$('guessed').onchange=e=>{q.guessed=e.target.checked;scheduleDraftSave()};return}
+ if(q.status==='Incorrect'){box.innerHTML=`<div class="extra-panel"><div class="field"><label>Was this a silly mistake?</label><div class="choice-row"><button type="button" class="choice-chip ${q.silly?'active':''}" id="sillyYes">Yes</button><button type="button" class="choice-chip ${!q.silly?'active':''}" id="sillyNo">No</button></div></div><div class="field"><label>Why did you get it wrong? ${q.silly?'':'<span class="required">*</span>'}</label><textarea id="reason" placeholder="Concept not clear, calculation error, misread question...">${escapeHtml(q.reason)}</textarea></div><div class="field" style="margin-bottom:0"><label>Topic <span class="small-muted">(optional)</span></label><input id="topic" value="${escapeHtml(q.topic)}" placeholder="e.g. Kinematics"></div></div>`;$('sillyYes').onclick=()=>{q.silly=true;renderExtraFields();scheduleDraftSave()};$('sillyNo').onclick=()=>{q.silly=false;renderExtraFields();scheduleDraftSave()};$('reason').oninput=e=>{q.reason=e.target.value;scheduleDraftSave()};$('topic').oninput=e=>{q.topic=e.target.value;scheduleDraftSave()};return}
+ box.innerHTML=`<div class="extra-panel"><div class="field"><label>Why did you skip it? <span class="required">*</span></label><textarea id="reason" placeholder="Why did you skip this question?">${escapeHtml(q.reason)}</textarea></div><div class="field" style="margin-bottom:0"><label>Topic <span class="small-muted">(optional)</span></label><input id="topic" value="${escapeHtml(q.topic)}" placeholder="e.g. Genetics"></div></div>`;$('reason').oninput=e=>{q.reason=e.target.value;scheduleDraftSave()};$('topic').oninput=e=>{q.topic=e.target.value;scheduleDraftSave()}}
 function validateQuestion(q){if(!q.status)return'Select Correct, Incorrect or Skipped.';if(q.status==='Incorrect'&&!q.silly&&!q.reason.trim())return'Reason is required unless Silly Mistake is checked.';if(q.status==='Skipped'&&!q.reason.trim())return'Reason is required for a skipped question.';return''}
-document.addEventListener('change',e=>{if(e.target.name==='status'){const q=state.questions[state.current];q.status=e.target.value;renderExtraFields();}});
-$('prevBtn').onclick=async()=>{if(state.current>0){state.current--;await renderQuestion()}};$('nextBtn').onclick=async()=>{const err=validateQuestion(state.questions[state.current]);if(err)return alert(err);if(state.current<state.questions.length-1){state.current++;await renderQuestion()}else{const missing=state.questions.find(q=>validateQuestion(q));if(missing){state.current=state.questions.indexOf(missing);await renderQuestion();return alert(`Question ${missing.number} still needs analysis.`)}renderSummary();showScreen('summary')}};
+document.addEventListener('change',e=>{if(e.target.name==='status'){const q=state.questions[state.current];q.status=e.target.value;renderExtraFields();scheduleDraftSave();}});
+async function leaveAnalysisTest(){
+  if(!state.test||!state.questions?.length)return;
+  saveAnalysisDraft();
+  if(state.pdf)state.pdf=null;
+  state.pdfFile=null;
+  showScreen('home');
+  toast('Test saved. You can resume it anytime.');
+}
+$('leaveTestBtn')?.addEventListener('click',leaveAnalysisTest);
+$('prevBtn').onclick=async()=>{if(state.current>0){state.current--;scheduleDraftSave();await renderQuestion()}};$('nextBtn').onclick=async()=>{const err=validateQuestion(state.questions[state.current]);if(err)return alert(err);if(state.current<state.questions.length-1){state.current++;await renderQuestion()}else{const missing=state.questions.find(q=>validateQuestion(q));if(missing){state.current=state.questions.indexOf(missing);await renderQuestion();return alert(`Question ${missing.number} still needs analysis.`)}saveAnalysisDraft();renderSummary();showScreen('summary')}};
 $('navigatorBtn').onclick=()=>{openModal('navigatorModal',buildNavigator)};$('closeNavigator').onclick=()=>closeModal('navigatorModal');
 function buildNavigator(){$('questionGrid').innerHTML=state.questions.map((q,i)=>`<button class="qnav ${q.status.toLowerCase()} ${i===state.current?'current':''}" data-i="${i}">${q.number}</button>`).join('');$('questionGrid').querySelectorAll('.qnav').forEach(b=>b.onclick=async()=>{state.current=Number(b.dataset.i);closeModal('navigatorModal');await renderQuestion()})}
 function updateNavButtons(){$('prevBtn').disabled=state.current===0;$('nextBtn').textContent=state.current===state.questions.length-1?'Review & Submit →':'Next →'}
@@ -98,7 +176,7 @@ function renderSummary(){const q=state.questions,c=q.filter(x=>x.status==='Corre
 function subjectFor(n,total){if(total!==180)return state.test?.type==='Subject-wise'?state.selectedSubject:null;if(n<=45)return'Physics';if(n<=90)return'Chemistry';if(n<=135)return'Botany';return'Zoology'}
 function calculateResult(){const qs=state.questions,correct=qs.filter(q=>q.status==='Correct').length,incorrect=qs.filter(q=>q.status==='Incorrect').length,skipped=qs.filter(q=>q.status==='Skipped').length,silly=qs.filter(q=>q.silly).length,total=correct*4-incorrect,accuracy=(correct+incorrect?correct/(correct+incorrect)*100:0);const subjects={};SUBJECTS.forEach(s=>subjects[s]={correct:0,incorrect:0,skipped:0,score:0,attempted:0});qs.forEach(q=>{const s=subjectFor(q.number,qs.length);if(subjects[s]){subjects[s][q.status.toLowerCase()]++;if(q.status!=='Skipped')subjects[s].attempted++;subjects[s].score+=q.status==='Correct'?4:q.status==='Incorrect'?-1:0}});Object.values(subjects).forEach(v=>v.accuracy=v.correct+v.incorrect?v.correct/(v.correct+v.incorrect)*100:0);return{correct,incorrect,skipped,silly,total,accuracy,subjects}}
 function getHistory(){try{return JSON.parse(localStorage.getItem(LS.history)||'[]')}catch{return[]}}
-function saveAndShowResult(){const result=calculateResult(),record={...state.test,result,questions:state.questions,syllabus:state.test.syllabus};const h=getHistory();h.unshift(record);localStorage.setItem(LS.history,JSON.stringify(h.slice(0,100)));state.resultRecord=record;renderResult(record);showScreen('result')}
+function saveAndShowResult(){clearAnalysisDraft();const result=calculateResult(),record={...state.test,result,questions:state.questions,syllabus:state.test.syllabus};const h=getHistory();h.unshift(record);localStorage.setItem(LS.history,JSON.stringify(h.slice(0,100)));state.resultRecord=record;renderResult(record);showScreen('result')}
 function previousComparison(record){const h=getHistory().filter(x=>x.id!==record.id);return h.length?h[0]:null}
 function resultNav(){return`<div class="result-nav">${['Overview','Subjects','Mistakes','Why I Lost Marks','Topics','Questions','Trend'].map((x,i)=>`<button class="result-tab ${i===0?'active':''}" data-result-tab="${x.toLowerCase()}">${x}</button>`).join('')}</div>`}
 function renderResult(record){const r=record.result,prev=previousComparison(record),delta=prev?r.total-prev.result.total:null;const scoreMax=record.questions.length===180?720:record.questions.length*4;const quote=r.total<500?'A low score is not a final result. It is feedback telling you exactly what to improve next.':'Consistency today creates success tomorrow.';const trend=getHistory().slice(0,8).reverse();
@@ -179,7 +257,33 @@ function generateMock(){
 }
 async function renderPdfQuizBuilder(){const b=$('pdfQuizBuilder');b.innerHTML='<div class="field"><label>Question PDF</label><input id="quizPdfInput" type="file" accept="application/pdf"><div id="quizPdfInfo" class="small-muted"></div></div><div class="field"><label>Answer Key</label><div class="segmented"><label><input type="radio" name="quizKeyMode" value="manual" checked> Enter manually</label><label><input type="radio" name="quizKeyMode" value="file"> Upload .txt</label></div><div id="quizKeyArea"></div></div><div class="actions"><button class="primary" id="startPdfQuiz">Create Interactive Quiz</button></div>';$('quizPdfInput').onchange=e=>{const f=e.target.files[0];$('quizPdfInfo').textContent=f?`${f.name} • ${(f.size/1048576).toFixed(2)} MB`:''};const renderKey=()=>{const mode=document.querySelector('input[name=quizKeyMode]:checked')?.value;if(mode==='file'){$('quizKeyArea').innerHTML='<input id="quizAnswerKeyFile" type="file" accept=".txt,text/plain"><div id="quizKeyInfo" class="small-muted">Example: 1A 2B 3C 4D</div>';$('quizAnswerKeyFile').onchange=e=>{const f=e.target.files[0];$('quizKeyInfo').textContent=f?`${f.name} selected`:''}}else{$('quizKeyArea').innerHTML='<input id="quizAnswerKey" placeholder="Example: 1A 2C 3B 4D"><div class="small-muted">Example formats: 1A 2B 3C… or one answer per line.</div>'}};document.querySelectorAll('input[name=quizKeyMode]').forEach(r=>r.onchange=renderKey);renderKey();$('startPdfQuiz').onclick=startPdfQuiz}
 async function startPdfQuiz(){const file=$('quizPdfInput')?.files?.[0];if(!file)return alert('Choose a PDF.');if(!pdfjsLib)return alert('PDF engine unavailable.');try{const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;const map=await extractPdfMap(pdf);const nums=[...map.keys()].sort((a,b)=>a-b);if(!nums.length)return alert('No question labels were detected in this PDF.');const mode=document.querySelector('input[name=quizKeyMode]:checked')?.value||'manual';let key={};if(mode==='file'){const kf=$('quizAnswerKeyFile')?.files?.[0];if(kf){key=parseAnswerKey(await kf.text());}else return alert('Choose a .txt answer key or select Enter manually.');}else key=parseAnswerKey($('quizAnswerKey')?.value||'');const qs=nums.map(n=>({number:n,pdf,info:map.get(n),answer:null}));qs.forEach(q=>q.answerKey=key[q.number]??null);closeModal('pdfQuizModal');openPracticeQuiz({title:file.name,questions:qs,pdf:true})}catch(e){console.error(e);alert('Could not parse the PDF or answer key.')}}
-async function extractPdfMap(pdf){const map=new Map();for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),vp=page.getViewport({scale:1}),text=await page.getTextContent(),labels=findQuestionLabels(text.items,vp,p),unique=[];const seen=new Set();for(const x of labels){if(!seen.has(x.number)){seen.add(x.number);unique.push(x)}}if(!unique.length)continue;const split=vp.width/2,cols=[unique.filter(x=>x.x<split),unique.filter(x=>x.x>=split)];const useCols=cols[0].length&&cols[1].length?cols:[unique];for(const col of useCols){col.sort((a,b)=>a.top-b.top);for(let i=0;i<col.length;i++){const q=col[i],next=col[i+1],left=useCols.length===2&&q.x<split;map.set(q.number,{pageNo:p,x0:left?Math.max(0,q.x-14):useCols.length===2?Math.max(split+8,q.x-14):18,x1:left?split-8:vp.width-18,top:Math.max(0,q.top-12),bottom:next?next.top-8:vp.height-15})}}}return map}
+async function extractPdfMap(pdf){
+ const map=new Map();
+ for(let p=1;p<=pdf.numPages;p++){
+   const page=await pdf.getPage(p),vp=page.getViewport({scale:1}),text=await page.getTextContent();
+   const labels=findQuestionLabels(text.items,vp,p);
+   if(!labels.length)continue;
+   // Keep the first label per number on this page; coordinate sorting, not PDF stream order, controls layout.
+   const byNum=new Map(); for(const x of labels){if(!byNum.has(x.number))byNum.set(x.number,x)}
+   const unique=[...byNum.values()];
+   const split=vp.width*0.5, left=unique.filter(x=>x.x<split), right=unique.filter(x=>x.x>=split);
+   const useCols=(left.length>=2&&right.length>=2)?[left,right]:[unique];
+   for(const col of useCols){
+     col.sort((a,b)=>a.top-b.top||a.x-b.x);
+     for(let i=0;i<col.length;i++){
+       const q=col[i],next=col[i+1],isTwo=useCols.length===2,isLeft=isTwo&&q.x<split;
+       let x0=isTwo?(isLeft?Math.max(0,Math.min(q.x-14,split-20)):Math.max(split+6,q.x-14)):Math.max(8,q.x-14);
+       let x1=isTwo?(isLeft?split-8:vp.width-8):vp.width-8;
+       const top=Math.max(0,q.top-12);
+       const bottom=next?Math.max(top+45,next.top-8):vp.height-12;
+       const info={pageNo:p,x0,x1,top,bottom};
+       // If a number already exists, prefer the earliest page/region that looks like the real question.
+       if(!map.has(q.number))map.set(q.number,info);
+     }
+   }
+ }
+ return map;
+}
 function parseAnswerKey(text){const out={};const raw=String(text||'').toUpperCase().replace(/[\r\n,;|]+/g,' ');for(const m of raw.matchAll(/(?:Q\s*)?(\d+)\s*[-.:)]?\s*([ABCD])/g))out[Number(m[1])]=m[2].charCodeAt(0)-65;return out}
 async function openPracticeQuiz(data){
  state.practiceQuiz={...data,index:0,answers:{},startedAt:Date.now()};
@@ -364,7 +468,7 @@ const EXTRA_SCREENS = ['home','practice','reports','history','about','analysis',
 function showScreen(name){
   EXTRA_SCREENS.forEach(s=>$(s+'Screen')?.classList.toggle('active',s===name));
   document.querySelectorAll('.nav-btn,[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));
-  if(name==='home') refreshHome();
+  if(name==='home'){if(state.test&&state.questions?.length&&document.getElementById('analysisScreen')?.classList.contains('active'))saveAnalysisDraft();refreshHome();}
   if(name==='history') renderHistory();
   if(name==='reports') renderReports();
   if(name==='settings') renderSettings();
@@ -541,6 +645,7 @@ function refreshHome(){
   const sub=$('greetingSub'); if(sub) sub.textContent=doctor?'Five consecutive 600+ tests. Keep going, Doctor! 🩺':g[1];
   const ach=$('achievementCard');
   if(ach){if(doctor){ach.classList.remove('hidden');ach.innerHTML=`<div class="achievement-title">🏆 ACHIEVEMENT UNLOCKED</div><strong>🩺 Dr. ${escapeHtml(name)} — 600+ Excellence Streak</strong><p>600+ in each of your last 5 tests. Consistency turns preparation into success.</p>`}else ach.classList.add('hidden')}
+  renderResumeDraftCard();
   const active=document.querySelector('.screen.active')?.id?.replace('Screen','');
   document.querySelectorAll('.mobile-bottom-nav button').forEach(b=>b.classList.toggle('active',b.dataset.screen===active));
 }

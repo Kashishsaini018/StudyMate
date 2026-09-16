@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <title>StudyMate — NEET Test Analysis</title>
-<link rel="manifest" href="manifest.json?v=final53">
+<link rel="manifest" href="manifest.json?v=final55">
 <link rel="icon" href="icons/icon-192-v18.png">
-<link rel="stylesheet" href="style.css?v=final53">
+<link rel="stylesheet" href="style.css?v=final55">
 </head>
 <body>
 <div id="app">
@@ -18,6 +18,7 @@
   <div class="final-home">
     <div class="final-greeting"><span class="eyebrow">STUDYMATE • NEET 2027 • YAKEEN 2.0 DROPper MODE</span><h1 id="greetingTitle">Good Morning!</h1><p id="dailyQuote">Your dream deserves your consistency. 🩺</p></div>
     <button id="startBtn" class="primary final-start">📝 <span>Start New Test Analysis</span><b>→</b></button>
+    <div id="resumeTestCard" class="resume-test-card hidden"></div>
     <div class="final-pattern"><div class="section-title"><h2>Test Pattern</h2><span>Your core tools</span></div><div class="pattern-grid">
       <button class="pattern-card" data-screen="history">📜<strong>History</strong><small>Past tests</small></button>
       <button class="pattern-card" data-screen="reports">📊<strong>Reports</strong><small>Performance</small></button>
@@ -58,7 +59,7 @@
 </section>
 
 <section id="analysisScreen" class="screen">
-  <div class="analysis-top"><div><span class="eyebrow" id="sectionLabel">PHYSICS</span><h2 id="questionTitle">Question 1 / 180</h2></div><button id="navigatorBtn" class="secondary">▦ Question Map</button></div>
+  <div class="analysis-top"><div><span class="eyebrow" id="sectionLabel">PHYSICS</span><h2 id="questionTitle">Question 1 / 180</h2></div><div class="analysis-actions"><button id="leaveTestBtn" class="secondary" type="button">↩ Leave Test</button><button id="navigatorBtn" class="secondary">▦ Question Map</button></div></div>
   <div class="progress-wrap"><div class="progress-bar"><div id="progressFill"></div></div><span id="progressText">1 / 180</span></div>
   <div class="question-card"><div id="questionViewer" class="question-viewer"></div><div class="answer-dock"><span class="dock-label">HOW DID YOU DO?</span><div class="status-options"><label><input type="radio" name="status" value="Correct"><span class="correct">✓<b>Correct</b></span></label><label><input type="radio" name="status" value="Incorrect"><span class="incorrect">×<b>Incorrect</b></span></label><label><input type="radio" name="status" value="Skipped"><span class="skipped">−<b>Skipped</b></span></label></div><div id="questionExtra"></div><div class="actions between"><button id="prevBtn" class="secondary">← Previous</button><button id="nextBtn" class="primary">Next →</button></div></div></div>
 </section>
@@ -92,6 +93,6 @@
 <div id="toast" class="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
-<script src="app.js?v=final54"></script>
+<script src="app.js?v=final55"></script>
 </body>
 </html>

@@ -156,3 +156,7 @@ button:active{transform:scale(.97)}
 .next-test-home-card:hover{transform:translateY(-2px)}.next-test-home-card>span:first-child{font-size:28px}.next-test-home-card strong{display:block}.next-test-home-card small{display:block;color:var(--muted);margin-top:4px}.next-test-home-card>b{font-size:22px}
 .daily-task.done span{text-decoration:line-through;opacity:.65}.daily-task label{display:flex;gap:10px;align-items:flex-start;flex:1}.daily-task label span{display:flex;flex-direction:column;gap:3px}.daily-task label small{color:var(--muted)}
 .why-lost-list{display:grid;gap:8px;margin-top:14px}
+.resume-test-card{margin-top:12px;background:linear-gradient(135deg,#eef4ff,#f8f2ff);border:1px solid var(--border);border-radius:20px;padding:15px 16px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:var(--shadow)}
+.resume-test-card.hidden{display:none}
+.resume-test-card>div{display:flex;flex-direction:column;gap:4px;min-width:0}.resume-test-card strong{font-size:16px}.resume-test-card small{color:var(--muted);font-size:12px;line-height:1.4}.analysis-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+@media(max-width:600px){.analysis-actions{width:100%;justify-content:flex-end}.analysis-actions button{padding:9px 10px;font-size:12px}.resume-test-card{align-items:flex-start;flex-direction:column}.resume-test-card .primary{width:100%}}
