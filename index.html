@@ -6,9 +6,9 @@
 <meta name="theme-color" content="#ffffff">
 <meta name="mobile-web-app-capable" content="yes">
 <title>StudyMate — NEET Test Analysis</title>
-<link rel="manifest" href="manifest.json?v=final52">
+<link rel="manifest" href="manifest.json?v=final53">
 <link rel="icon" href="icons/icon-192-v18.png">
-<link rel="stylesheet" href="style.css?v=final52">
+<link rel="stylesheet" href="style.css?v=final53">
 </head>
 <body>
 <div id="app">
@@ -16,7 +16,7 @@
 <main>
 <section id="homeScreen" class="screen active">
   <div class="final-home">
-    <div class="final-greeting"><span class="eyebrow">STUDYMATE • NEET 2027</span><h1 id="greetingTitle">Good Morning!</h1><p id="dailyQuote">Your dream deserves your consistency. 🩺</p></div>
+    <div class="final-greeting"><span class="eyebrow">STUDYMATE • NEET 2027 • YAKEEN 2.0 DROPper MODE</span><h1 id="greetingTitle">Good Morning!</h1><p id="dailyQuote">Your dream deserves your consistency. 🩺</p></div>
     <button id="startBtn" class="primary final-start">📝 <span>Start New Test Analysis</span><b>→</b></button>
     <div class="final-pattern"><div class="section-title"><h2>Test Pattern</h2><span>Your core tools</span></div><div class="pattern-grid">
       <button class="pattern-card" data-screen="history">📜<strong>History</strong><small>Past tests</small></button>
@@ -24,7 +24,7 @@
       <button class="pattern-card" data-screen="planner">🎯<strong>Success Planner</strong><small>Chapters & milestones</small></button>
       <button class="pattern-card" data-screen="daySummary">📋<strong>Day Summary</strong><small>Record today's work</small></button>
     </div></div>
-    <button class="mistake-home-card" id="mistakeNotebookHome"><span class="mistake-big-icon">📓</span><span><strong>Mistake Notebook</strong><small>Review every mistake from your analysed tests and practice them again.</small></span><b>→</b></button>
+    <button class="next-test-home-card" id="nextTestHome"><span>📝</span><span><strong>Next Test Preparation</strong><small>Set your next test syllabus, see time left and prepare by priority.</small></span><b>→</b></button><button class="mistake-home-card" id="mistakeNotebookHome"><span class="mistake-big-icon">📓</span><span><strong>Mistake Notebook</strong><small>Review every mistake from your analysed tests and practice them again.</small></span><b>→</b></button>
     <div class="neet-countdown-card"><div><span class="eyebrow">🩺 NEET 2027 COUNTDOWN</span><strong id="neetCountdown">Loading…</strong><small id="neetCountdownNote">Target date can be changed in Settings.</small></div><span class="countdown-mark">⏳</span></div>
   </div>
 </section>
@@ -34,7 +34,7 @@
   <div class="practice-grid">
     <button class="feature-card" id="generateMock"><span>🎯</span><strong>Generate Mock Test</strong><small>Choose chapters, question count and source level.</small><b>→</b></button>
     <button class="feature-card" id="uploadQuiz"><span>📄</span><strong>Upload PDF → Quiz</strong><small>Turn a question paper into an interactive quiz.</small><b>→</b></button>
-    <button class="feature-card wide" id="practiceMyTests"><span>⭐</span><strong>Practice from My Tests</strong><small>Reattempt incorrect, silly-mistake, skipped and weak-topic questions without changing the original result.</small><b>→</b></button>
+    
   </div>
 </section>
 
@@ -67,6 +67,9 @@
 <section id="resultScreen" class="screen"><div id="resultContent"></div></section>
 <section id="daySummaryScreen" class="screen"><div class="page-head"><div><span class="eyebrow">DAILY RECORD</span><h2>Day Summary</h2><div class="small-muted">Record what you actually studied today.</div></div></div><div id="daySummaryContent"></div></section>
 <section id="mistakeNotebookScreen" class="screen"><div class="page-head"><div><span class="eyebrow">MISTAKE NOTEBOOK</span><h2>Your Mistakes</h2><div class="small-muted">Exact questions from your saved test PDFs, with the topic you recorded.</div></div></div><div id="mistakeNotebookContent"></div></section>
+<section id="nextTestScreen" class="screen"><div class="page-head"><div><span class="eyebrow">NEXT TEST PREPARATION</span><h2>Next Test Syllabus & Preparation</h2><div class="small-muted">Set the test date/time and syllabus. StudyMate uses your recorded performance to highlight what needs attention.</div></div></div><div id="nextTestContent"></div></section>
+__NEXTTEST__
+__NEXTTEST__
 <section id="settingsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">SETTINGS</span><h2>Settings</h2></div></div><div id="settingsContent"></div></section>
 <section id="ncertScreen" class="screen"><div class="page-head"><div><span class="eyebrow">NCERT</span><h2>NCERT Focus Mode</h2><div class="small-muted">Track your NCERT reading and revision without reproducing the book.</div></div></div><div id="ncertContent"></div></section>
 <section id="goalsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">DAILY GOALS</span><h2>Daily Goals</h2><div class="small-muted">Set today's targets and compare them with your Day Summary.</div></div></div><div id="goalsContent"></div></section>
@@ -74,15 +77,13 @@
 <section id="revisionScreen" class="screen"><div class="page-head"><div><span class="eyebrow">REVISION</span><h2>Intelligent Revision</h2><div class="small-muted">Revision priorities based on your recorded planner milestones.</div></div></div><div id="revisionContent"></div></section>
 <section id="weaknessScreen" class="screen"><div class="page-head"><div><span class="eyebrow">WEAKNESS ENGINE</span><h2>Smart Weakness Engine</h2><div class="small-muted">Rank topics using your real mistake data.</div></div></div><div id="weaknessContent"></div></section>
 <section id="studymateScreen" class="screen"><div class="page-head"><div><span class="eyebrow">PERSONAL STUDYMATE</span><h2>Personal NEET StudyMate</h2><div class="small-muted">Your next actions from the data you record.</div></div></div><div id="studymateContent"></div></section>
-<section id="nextTestScreen" class="screen"><div class="page-head"><div><span class="eyebrow">NEXT TEST</span><h2>Next Test Syllabus & Planner</h2><div class="small-muted">Enter your next test syllabus and time; StudyMate builds a focused revision plan.</div></div></div><div id="nextTestContent"></div></section>
 </main>
 
 <div id="navigatorModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">NAVIGATE</span><h3>Question Map</h3></div><button class="icon-btn" id="closeNavigator">×</button></div><div id="questionGrid" class="question-grid"></div></div></div>
 <div id="mockModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">PRACTICE BUILDER</span><h3>Generate Mock Test</h3></div><button class="icon-btn close-modal">×</button></div><div id="mockBuilder"></div></div></div>
 <div id="pdfQuizModal" class="modal hidden"><div class="modal-card large-modal"><div class="modal-head"><div><span class="eyebrow">INTERACTIVE QUIZ</span><h3>Upload Question PDF</h3></div><button class="icon-btn close-modal">×</button></div><div id="pdfQuizBuilder"></div></div></div>
-<div id="practiceMyModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">PRACTICE FROM MY TESTS</span><h3>Choose what to reattempt</h3></div><button class="icon-btn close-modal">×</button></div><div id="practiceMyBuilder"></div></div></div>
 <div id="moreModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">MORE</span><h3>StudyMate Tools</h3></div><button class="icon-btn close-modal">×</button></div><div class="more-menu-grid">
-<button data-screen="practice">📚<strong>Practice</strong><small>Mock tests & PDF quiz</small></button><button data-screen="mistakeNotebook">📓<strong>Mistake Notebook</strong><small>Review mistakes</small></button><button id="morePracticeMistakes">🔥<strong>Practice My Mistakes</strong><small>Targeted reattempts</small></button><button data-screen="planner">🎯<strong>Success Planner</strong><small>Study & revision milestones</small></button><button data-screen="daySummary">📋<strong>Day Summary</strong><small>Today's work</small></button><button data-screen="ncert">📖<strong>NCERT Focus Mode</strong><small>Reading & revision tracker</small></button><button data-screen="goals">🎯<strong>Daily Goals</strong><small>Daily targets</small></button><button data-screen="comparison">⚔️<strong>Test Comparison</strong><small>Compare performance</small></button><button data-screen="revision">🧠<strong>Intelligent Revision</strong><small>Spaced revision</small></button><button data-screen="weakness">🔥<strong>Smart Weakness Engine</strong><small>Find priorities</small></button><button data-screen="studymate">🤖<strong>Personal NEET StudyMate</strong><small>What should I do now?</small></button><button data-screen="nextTest">🗓️<strong>Next Test Syllabus & Planner</strong><small>Plan the time left for your next test</small></button><button data-screen="settings">⚙️<strong>Settings</strong><small>Security, backup & theme</small></button>
+<button data-screen="practice">📚<strong>Practice</strong><small>Mock tests & PDF quiz</small></button><button data-screen="mistakeNotebook">📓<strong>Mistake Notebook</strong><small>Review mistakes & redo</small></button><button data-screen="planner">🎯<strong>Success Planner</strong><small>Study & revision milestones</small></button><button data-screen="daySummary">📋<strong>Day Summary</strong><small>Today's work</small></button><button data-screen="ncert">📖<strong>NCERT Focus Mode</strong><small>Reading & revision tracker</small></button><button data-screen="goals">🎯<strong>Daily Goals</strong><small>Daily targets</small></button><button data-screen="comparison">⚔️<strong>Test Comparison</strong><small>Compare performance</small></button><button data-screen="revision">🧠<strong>Intelligent Revision</strong><small>Spaced revision</small></button><button data-screen="weakness">🔥<strong>Smart Weakness Engine</strong><small>Find priorities</small></button><button data-screen="studymate">🤖<strong>Personal NEET StudyMate</strong><small>What should I do now?</small></button><button data-screen="settings">⚙️<strong>Settings</strong><small>Security, backup & theme</small></button>
 </div></div></div>
 <input id="restoreFileInput" type="file" accept=".smbackup,application/json" hidden>
 <div id="lockScreen" class="lock-screen hidden"><div class="lock-card"><div class="lock-logo">🔐</div><h2>StudyMate is Locked</h2><p>Enter your passcode to continue.</p><div id="lockBody"></div></div></div>
@@ -93,6 +94,6 @@
 <div id="toast" class="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
-<script src="app.js?v=final52"></script>
+<script src="app.js?v=final53"></script>
 </body>
 </html>
