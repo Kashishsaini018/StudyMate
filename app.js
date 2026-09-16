@@ -1,4 +1,4 @@
-/* StudyMate Final — local-first NEET analysis app. */
+/* StudyMate Final V5.7 — local-first NEET analysis app. */
 const pdfjsLib = window.pdfjsLib || null;
 const $ = id => document.getElementById(id);
 const SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','planner','todo','daySummary','mistakeNotebook','nextTest','ncert','goals','comparison','revision','weakness','studymate'];
@@ -80,7 +80,11 @@ $('testType').addEventListener('change',renderSyllabusUI);
 function chapterCheckboxes(subject){return SYLLABUS[subject].map((c,i)=>`<label class="chapter-item"><input type="checkbox" value="${escapeHtml(c)}" data-subject="${subject}" data-index="${i}"><span>${escapeHtml(c)}</span></label>`).join('')}
 function renderSyllabusUI(){const type=$('testType').value,area=$('syllabusArea');area.innerHTML='';if(!type)return;
  if(type==='Full Syllabus'){area.innerHTML='<div class="field"><label>Syllabus</label><div class="syllabus-box">Complete NEET 2027 syllabus — Physics + Chemistry + Botany + Zoology</div></div>';return}
- if(type==='Mock Test'){area.innerHTML='<div class="field"><label>Enter Syllabus Manually</label><textarea id="manualSyllabus" required placeholder="Type the syllabus covered in this mock test..."></textarea></div>';return}
+ if(type==='Mock Test'){
+  area.innerHTML=`<div class="field"><label>Syllabus Source</label><div class="segmented"><label><input type="radio" name="mockSyllabusMode" value="select" checked> Select from NEET 2027 Syllabus</label><label><input type="radio" name="mockSyllabusMode" value="manual"> Enter manually</label></div></div><div id="mockSyllabusContent"></div>`;
+  const renderMockSyllabus=()=>{const mode=document.querySelector('input[name="mockSyllabusMode"]:checked')?.value||'select';const box=$('mockSyllabusContent');if(mode==='manual'){box.innerHTML='<div class="field"><label>Enter Syllabus Manually</label><textarea id="manualSyllabus" required placeholder="Type the syllabus covered in this mock test..."></textarea></div>';}else{box.innerHTML=`<div class="field"><label>Select Chapters <span class="small-muted">(multiple)</span></label><div id="allMockChapters" class="chapter-picker">${SUBJECTS.map(s=>`<div style="margin-bottom:14px"><strong>${s}</strong><div class="chapter-list" style="margin-top:7px">${chapterCheckboxes(s)}</div></div>`).join('')}</div></div>`;}};
+  document.querySelectorAll('input[name="mockSyllabusMode"]').forEach(r=>r.onchange=renderMockSyllabus);renderMockSyllabus();return
+ }
  if(type==='Subject-wise'){area.innerHTML=`<div class="field"><label>Select Subject</label><div class="subject-tabs">${SUBJECTS.map(s=>`<button type="button" data-sub="${s}" class="${s==='Physics'?'active':''}">${s}</button>`).join('')}</div></div><div class="field"><label>Select Chapters <span class="small-muted">(multiple)</span></label><div id="subjectChapters" class="chapter-picker"></div></div>`;state.selectedSubject='Physics';renderSubjectChapters();area.querySelectorAll('[data-sub]').forEach(b=>b.onclick=()=>{state.selectedSubject=b.dataset.sub;area.querySelectorAll('[data-sub]').forEach(x=>x.classList.toggle('active',x===b));renderSubjectChapters()});return}
  area.innerHTML=`<div class="field"><label>Select Chapters <span class="small-muted">(multiple)</span></label><div id="allChapters" class="chapter-picker">${SUBJECTS.map(s=>`<div style="margin-bottom:14px"><strong>${s}</strong><div class="chapter-list" style="margin-top:7px">${chapterCheckboxes(s)}</div></div>`).join('')}</div></div>`;
 }
@@ -89,7 +93,11 @@ $('aboutForm').addEventListener('change',e=>{if(e.target.name==='usePdf')renderP
 function renderPdfChoice(choice){const a=$('pdfChoiceArea');a.innerHTML='';if(choice==='Yes'){a.innerHTML='<div class="field"><label>Upload Test Paper PDF</label><input id="pdfInput" type="file" accept="application/pdf" required><div id="pdfInfo" class="small-muted"></div></div>';$('pdfInput').onchange=e=>{const f=e.target.files[0];$('pdfInfo').textContent=f?`${f.name} • ${(f.size/1048576).toFixed(2)} MB`:''}}
  else if(choice==='No')a.innerHTML='<div class="field"><label>Number of Questions</label><input id="questionCount" type="number" min="1" max="500" required placeholder="e.g. 180"></div>'}
 $('aboutForm').onsubmit=async e=>{e.preventDefault();const type=$('testType').value;let syllabus='';
- if(type==='Mock Test')syllabus=$('manualSyllabus').value.trim();
+ if(type==='Mock Test'){
+  const mode=document.querySelector('input[name="mockSyllabusMode"]:checked')?.value||'select';
+  if(mode==='manual') syllabus=$('manualSyllabus')?.value.trim()||'';
+  else {const checked=[...document.querySelectorAll('#allMockChapters input:checked')];if(!checked.length)return alert('Select at least one chapter.');const groups={};checked.forEach(x=>(groups[x.dataset.subject]??=[]).push(x.value));syllabus=Object.entries(groups).map(([s,c])=>`${s}: ${c.join(', ')}`).join('\n')}
+ }
  else if(type==='Full Syllabus')syllabus='Complete NEET 2027 syllabus — Physics + Chemistry + Botany + Zoology';
  else if(type==='Subject-wise'){const c=[...document.querySelectorAll('#subjectChapters input:checked')].map(x=>x.value);if(!c.length)return alert('Select at least one chapter.');syllabus=`${state.selectedSubject}: ${c.join(', ')}`}
  else {const checked=[...document.querySelectorAll('#allChapters input:checked')];if(!checked.length)return alert('Select at least one chapter.');const groups={};checked.forEach(x=>(groups[x.dataset.subject]??=[]).push(x.value));syllabus=Object.entries(groups).map(([s,c])=>`${s}: ${c.join(', ')}`).join('\n')}
@@ -100,24 +108,34 @@ $('aboutForm').onsubmit=async e=>{e.preventDefault();const type=$('testType').va
  saveAnalysisDraft();
  state.current=0;await renderQuestion();showScreen('analysis');};
 function blankQuestion(number){return{number,status:'',guessed:false,silly:false,reason:'',topic:''}}
-function getItemRect(item,viewport){const x=item.transform[4],y=item.transform[5],w=item.width||20,h=item.height||Math.abs(item.transform[3])||10;const p1=viewport.convertToViewportPoint(x,y),p2=viewport.convertToViewportPoint(x+w,y+h);return{x:Math.min(p1[0],p2[0]),top:Math.min(p1[1],p2[1]),bottom:Math.max(p1[1],p2[1]),right:Math.max(p1[0],p2[0])}}
+function getItemRect(item,viewport){const x=item.transform[4],y=item.transform[5],w=item.width||20,h=item.height||Math.abs(item.transform[3])||10;const p1=viewport.convertToViewportPoint(x,y),p2=viewport.convertToViewportPoint(x+w,y+h);return{x:Math.min(p1[0],p2[0]),top:Math.min(p1[1],p2[1]),bottom:Math.max(p1[1],p2[1]),right:Math.max(p1[0],p2[0]),w:Math.abs(p2[0]-p1[0]),h:Math.abs(p2[1]-p1[1])}}
 function findQuestionLabels(items,viewport,pageNo){
+ const split=viewport.width/2;
+ const usable=items.map((item,index)=>({item,index,r:getItemRect(item,viewport),raw:String(item.str||'').replace(/\u00a0/g,' ').trim()})).filter(x=>x.raw);
+ const groups=[];
+ const columns=(usable.some(x=>x.r.x<split)&&usable.some(x=>x.r.x>=split))?[usable.filter(x=>x.r.x<split),usable.filter(x=>x.r.x>=split)]:[usable];
+ for(const col of columns){
+   col.sort((a,b)=>a.r.top-b.r.top||a.r.x-b.r.x);
+   let line=[];let lineTop=null;
+   const flush=()=>{if(!line.length)return;line.sort((a,b)=>a.r.x-b.r.x);groups.push({parts:line.slice(),text:line.map(x=>x.raw).join(' ')});line=[];lineTop=null};
+   for(const x of col){
+     if(lineTop===null||Math.abs(x.r.top-lineTop)<=4){line.push(x);if(lineTop===null)lineTop=x.r.top}
+     else{flush();line=[x];lineTop=x.r.top}
+   }
+   flush();
+ }
  const out=[];
- for(const item of items){
-   const raw=(item.str||'').replace(/\u00a0/g,' ').trim(); if(!raw)continue;
-   const candidates=[];
-   // Common printed labels: Q1, Q 1, Q.1, Q. 1, Question 1
-   for(const re of [/^Q\s*\.?\s*(\d{1,3})(?=\s|$|[.)\]:-])/i,/^Question\s*(?:No\.?\s*)?(\d{1,3})(?=\s|$|[.)\]:-])/i]){
-     const m=raw.match(re); if(m)candidates.push(Number(m[1]));
-   }
-   // Many coaching sheets use a plain numeric label: 1. / 1) / 1:
-   const nm=raw.match(/^(\d{1,3})\s*[.)](?=\s|$)/);
-   if(nm)candidates.push(Number(nm[1]));
-   const seen=new Set();
-   for(const number of candidates){
-     if(number<1||number>500||seen.has(number))continue; seen.add(number);
-     const r=getItemRect(item,viewport);out.push({number,...r,pageNo});
-   }
+ for(const g of groups){
+   const raw=g.text.replace(/\s+/g,' ').trim();
+   let number=null;
+   const patterns=[
+     /^(?:Q(?:uestion)?\s*(?:No\.?\s*)?\.?\s*)(\d{1,3})(?=\s|$|[.)\]:-])/i,
+     /^(\d{1,3})\s*[.)\]:-](?=\s|$)/
+   ];
+   for(const re of patterns){const m=raw.match(re);if(m){number=Number(m[1]);break}}
+   if(number===null||number<1||number>500)continue;
+   const first=g.parts[0];
+   out.push({number,...first.r,pageNo});
  }
  return out;
 }
@@ -256,26 +274,33 @@ function generateMock(){
  openPracticeQuiz({title:`Generated Mock — ${level}`,questions,level,practiceType:type});
 }
 async function renderPdfQuizBuilder(){const b=$('pdfQuizBuilder');b.innerHTML='<div class="field"><label>Question PDF</label><input id="quizPdfInput" type="file" accept="application/pdf"><div id="quizPdfInfo" class="small-muted"></div></div><div class="field"><label>Answer Key</label><div class="segmented"><label><input type="radio" name="quizKeyMode" value="manual" checked> Enter manually</label><label><input type="radio" name="quizKeyMode" value="file"> Upload .txt</label></div><div id="quizKeyArea"></div></div><div class="actions"><button class="primary" id="startPdfQuiz">Create Interactive Quiz</button></div>';$('quizPdfInput').onchange=e=>{const f=e.target.files[0];$('quizPdfInfo').textContent=f?`${f.name} • ${(f.size/1048576).toFixed(2)} MB`:''};const renderKey=()=>{const mode=document.querySelector('input[name=quizKeyMode]:checked')?.value;if(mode==='file'){$('quizKeyArea').innerHTML='<input id="quizAnswerKeyFile" type="file" accept=".txt,text/plain"><div id="quizKeyInfo" class="small-muted">Example: 1A 2B 3C 4D</div>';$('quizAnswerKeyFile').onchange=e=>{const f=e.target.files[0];$('quizKeyInfo').textContent=f?`${f.name} selected`:''}}else{$('quizKeyArea').innerHTML='<input id="quizAnswerKey" placeholder="Example: 1A 2C 3B 4D"><div class="small-muted">Example formats: 1A 2B 3C… or one answer per line.</div>'}};document.querySelectorAll('input[name=quizKeyMode]').forEach(r=>r.onchange=renderKey);renderKey();$('startPdfQuiz').onclick=startPdfQuiz}
-async function startPdfQuiz(){const file=$('quizPdfInput')?.files?.[0];if(!file)return alert('Choose a PDF.');if(!pdfjsLib)return alert('PDF engine unavailable.');try{const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;const map=await extractPdfMap(pdf);const nums=[...map.keys()].sort((a,b)=>a-b);if(!nums.length)return alert('No question labels were detected in this PDF.');const mode=document.querySelector('input[name=quizKeyMode]:checked')?.value||'manual';let key={};if(mode==='file'){const kf=$('quizAnswerKeyFile')?.files?.[0];if(kf){key=parseAnswerKey(await kf.text());}else return alert('Choose a .txt answer key or select Enter manually.');}else key=parseAnswerKey($('quizAnswerKey')?.value||'');const qs=nums.map(n=>{const info=map.get(n),rawKey=key[n],type=info.questionType||((rawKey?.kind==='numeric'&&Math.abs(Number(rawKey.value))>4)?'numeric':'mcq');let answerKey=null;if(rawKey)answerKey=type==='numeric'?Number(rawKey.value):(rawKey.kind==='letter'?rawKey.value:Math.max(0,Math.min(3,Number(rawKey.value)-1)));return{number:n,pdf,info,questionType:type,answer:null,answerKey};});closeModal('pdfQuizModal');openPracticeQuiz({title:file.name,questions:qs,pdf:true})}catch(e){console.error(e);alert('Could not parse the PDF or answer key.')}}
+async function startPdfQuiz(){const file=$('quizPdfInput')?.files?.[0];if(!file)return alert('Choose a PDF.');if(!pdfjsLib)return alert('PDF engine unavailable.');try{const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;const map=await extractPdfMap(pdf);const nums=[...map.keys()].sort((a,b)=>a-b);if(!nums.length)return alert('No question labels were detected in this PDF.');const orderedNums=nums.slice();const mode=document.querySelector('input[name=quizKeyMode]:checked')?.value||'manual';let key={};if(mode==='file'){const kf=$('quizAnswerKeyFile')?.files?.[0];if(kf){key=parseAnswerKey(await kf.text());}else return alert('Choose a .txt answer key or select Enter manually.');}else key=parseAnswerKey($('quizAnswerKey')?.value||'');const qs=orderedNums.map(n=>{const info=map.get(n),rawKey=key[n],type=info.questionType||((rawKey?.kind==='numeric'&&Math.abs(Number(rawKey.value))>4)?'numeric':'mcq');let answerKey=null;if(rawKey)answerKey=type==='numeric'?Number(rawKey.value):(rawKey.kind==='letter'?rawKey.value:Math.max(0,Math.min(3,Number(rawKey.value)-1)));return{number:n,pdf,info,questionType:type,answer:null,answerKey};});closeModal('pdfQuizModal');openPracticeQuiz({title:file.name,questions:qs,pdf:true})}catch(e){console.error(e);alert('Could not parse the PDF or answer key.')}}
 async function extractPdfMap(pdf){
- const map=new Map();
+ const candidates=[];
  for(let p=1;p<=pdf.numPages;p++){
-   const page=await pdf.getPage(p),vp=page.getViewport({scale:1}),text=await page.getTextContent();
-   const labels=findQuestionLabels(text.items,vp,p);if(!labels.length)continue;
-   const byNum=new Map();for(const x of labels){if(!byNum.has(x.number))byNum.set(x.number,x)}
-   const unique=[...byNum.values()],split=vp.width*.5,left=unique.filter(x=>x.x<split),right=unique.filter(x=>x.x>=split),useCols=(left.length>=2&&right.length>=2)?[left,right]:[unique];
-   for(const col of useCols){col.sort((a,b)=>a.top-b.top||a.x-b.x);for(let i=0;i<col.length;i++){
-     const q=col[i],next=col[i+1],isTwo=useCols.length===2,isLeft=isTwo&&q.x<split;
-     const x0=isTwo?(isLeft?Math.max(0,Math.min(q.x-14,split-20)):Math.max(split+6,q.x-14)):Math.max(8,q.x-14),x1=isTwo?(isLeft?split-8:vp.width-8):vp.width-8,top=Math.max(0,q.top-12),bottom=next?Math.max(top+45,next.top-8):vp.height-12;
-     const regionItems=text.items.filter(it=>{const r=getItemRect(it,vp),cx=r.x+r.w/2;return r.top>=top-4&&r.top<=bottom+4&&cx>=x0-8&&cx<=x1+8});
-     const regionText=regionItems.map(it=>String(it.str||'')).join(' ').replace(/\s+/g,' ').trim();
-     const hasNA=/\[\s*(?:NA|N\.?A\.?|NUMERIC|INTEGER)\s*\]/i.test(regionText)||/numeric\s+answer/i.test(regionText);
-     const hasOptions=/(?:^|\s)\(\s*[1-4]\s*\)/.test(regionText);
-     const questionType=hasNA||(!hasOptions&&/(?:_{2,}|\b(?:integer|value|answer)\b)/i.test(regionText))?'numeric':'mcq';
-     const info={pageNo:p,x0,x1,top,bottom,questionType};if(!map.has(q.number))map.set(q.number,info);
-   }}
+  const page=await pdf.getPage(p),vp=page.getViewport({scale:1}),text=await page.getTextContent();
+  const labels=findQuestionLabels(text.items,vp,p);if(!labels.length)continue;
+  const split=vp.width*.5,left=labels.filter(x=>x.x<split),right=labels.filter(x=>x.x>=split),useCols=(left.length>=2&&right.length>=2)?[left,right]:[labels];
+  for(const col of useCols){
+   col.sort((a,b)=>a.top-b.top||a.x-b.x);
+   for(let i=0;i<col.length;i++){
+    const q=col[i],next=col[i+1],isTwo=useCols.length===2,isLeft=isTwo&&q.x<split;
+    const x0=isTwo?(isLeft?Math.max(0,Math.min(q.x-14,split-20)):Math.max(split+6,q.x-14)):Math.max(8,q.x-14),x1=isTwo?(isLeft?split-8:vp.width-8):vp.width-8,top=Math.max(0,q.top-12),bottom=next?Math.max(top+45,next.top-8):vp.height-12;
+    const regionItems=text.items.filter(it=>{const r=getItemRect(it,vp),cx=r.x+r.w/2;return r.top>=top-4&&r.top<=bottom+4&&cx>=x0-8&&cx<=x1+8});
+    const regionText=regionItems.map(it=>String(it.str||'')).join(' ').replace(/\s+/g,' ').trim();
+    const optionMatches=(regionText.match(/\(\s*[1-4]\s*\)/g)||[]).length;
+    const hasNA=/\[\s*(?:NA|N\.?A\.?|NUMERIC|INTEGER)\s*\]/i.test(regionText)||/numeric\s+(?:answer|response)/i.test(regionText);
+    const hasBlank=/(?:_{2,}|\.{3,}|=\s*[-_]{2,})/.test(regionText);
+    const questionLike=optionMatches>=2||hasNA||hasBlank||/\b(?:choose|select|which|what|find|calculate|value|work done|answer)\b/i.test(regionText);
+    const questionType=hasNA||(!optionMatches&&hasBlank)?'numeric':'mcq';
+    const score=(questionLike?100:0)+(optionMatches*10)+(hasNA?20:0)+(hasBlank?15:0)+(q.number<=300?1:0);
+    candidates.push({number:q.number,info:{pageNo:p,x0,x1,top,bottom,questionType},score});
+   }
+  }
  }
- return map;
+ // For duplicate labels (e.g. numbered instructions followed by actual questions), keep the strongest question-like candidate.
+ const best=new Map();for(const c of candidates){const prev=best.get(c.number);if(!prev||c.score>prev.score)best.set(c.number,c)}
+ return new Map([...best.entries()].sort((a,b)=>a[0]-b[0]).map(([n,c])=>[n,c.info]));
 }
 function parseAnswerKey(text){const out={};const raw=String(text||'').replace(/[\r\n,;|]+/g,' ');for(const m of raw.matchAll(/(?:Q\s*)?(\d+)\s*[-.:)]?\s*([ABCD])/gi))out[Number(m[1])]={kind:'letter',value:m[2].toUpperCase().charCodeAt(0)-65};for(const m of raw.matchAll(/(?:Q\s*)?(\d+)\s*[-.:)]?\s*\(\s*(-?\d+(?:\.\d+)?)\s*\)|(?:Q\s*)?(\d+)\s*[-.:)]?\s+(-?\d+(?:\.\d+)?)/gi)){const n=Number(m[1]??m[3]),v=Number(m[2]??m[4]);if(!Object.prototype.hasOwnProperty.call(out,n))out[n]={kind:'numeric',value:v}}return out}
 function numericEqual(a,b){const x=Number(a),y=Number(b);if(!Number.isFinite(x)||!Number.isFinite(y))return false;const scale=Math.max(1,Math.abs(x),Math.abs(y));return Math.abs(x-y)<=1e-6*scale}
@@ -548,7 +573,7 @@ function renderSuccessPlanner(){
     $('plannerPanel').innerHTML=`<div class="report-card planner-table-card"><div class="planner-table-head"><div><h3>${escapeHtml(subject)}</h3><span class="small-muted">Chapter ${i+1} of ${chapters.length}</span></div><span class="planner-legend">${st.pct}% complete</span></div><article class="planner-mobile-card ${st.status.toLowerCase().replace(' ','')}"><div class="planner-mobile-card-head"><div><span class="planner-number-badge">${i+1}</span><strong>${escapeHtml(chapter)}</strong><small>${st.checked}/${st.total} milestones completed</small></div><span class="planner-mobile-status">${st.mastered?'🏆 Mastered':st.status==='On Track'?'🟢 On Track':st.checked?'🟡 Needs Work':'🔴 Not Started'}</span></div><div class="planner-mobile-progress"><span style="width:${st.pct}%"></span></div><div class="planner-mobile-steps">${mobileSteps}</div></article><div class="planner-chapter-nav"><button class="secondary" id="plannerPrev" ${i===0?'disabled':''}>← Previous Chapter</button><span class="planner-chapter-count">${i+1} / ${chapters.length}</span><button class="secondary" id="plannerNext" ${i===chapters.length-1?'disabled':''}>Next Chapter →</button></div></div>`;
     bindPlannerChecks(subject,i);$('plannerPrev').onclick=()=>renderSubject(subject,i-1);$('plannerNext').onclick=()=>renderSubject(subject,i+1);
   };
-  function bindPlannerChecks(subject,chapterIndex){document.querySelectorAll('[data-planner-key]').forEach(cb=>cb.onchange=()=>{const all=getPlanner(),item=all[cb.dataset.plannerKey]||{};item[cb.dataset.plannerStep]=cb.checked;item.lastStudy=new Date().toISOString();all[cb.dataset.plannerKey]=item;savePlanner(all);data[cb.dataset.plannerKey]=item;renderSubject(subject,chapterIndex);toast(cb.checked?'Milestone completed ✓':'Milestone unchecked');});}
+  function bindPlannerChecks(subject,chapterIndex){document.querySelectorAll('[data-planner-key]').forEach(cb=>cb.onchange=()=>{const key=cb.dataset.plannerKey,step=cb.dataset.plannerStep;const all=getPlanner(),item=all[key]||{};item[step]=cb.checked;item.lastStudy=new Date().toISOString();all[key]=item;savePlanner(all);data[key]=item;const label=cb.closest('.planner-mobile-step');label?.classList.toggle('checked',cb.checked);const icon=label?.querySelector('i');if(icon)icon.textContent=cb.checked?'✓':'';const steps=(subject==='Botany'||subject==='Zoology')?PLANNER_STEPS:PLANNER_STEPS.filter(st=>!st.bioOnly);const checked=steps.filter(st=>!!item[st.key]).length,pct=Math.round(checked/steps.length*100);const card=$('plannerPanel')?.querySelector('.planner-mobile-card');card?.querySelector('.planner-mobile-progress span')?.style.setProperty('width',pct+'%');card?.querySelector('.planner-legend')&&(card.querySelector('.planner-legend').textContent=pct+'% complete');card?.querySelector('.planner-mobile-card-head small')&&(card.querySelector('.planner-mobile-card-head small').textContent=`${checked}/${steps.length} milestones completed`);toast(cb.checked?'Milestone completed ✓':'Milestone unchecked');});}
   renderSubject('Physics',0);
   document.querySelectorAll('[data-planner-sub]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-planner-sub]').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderSubject(b.dataset.plannerSub,0)});
 }
@@ -708,19 +733,81 @@ const TREND_WEIGHT={
  Botany:{'Molecular Basis of Inheritance':8.07,'Biotechnology: Principles and Processes':6.61,'Sexual Reproduction in Flowering Plants':4.77,'Principles of Inheritance and Variation':4.77,'Cell Cycle and Cell Division':4.40,'Ecosystem':3.30,'Plant Kingdom':3.33,'Photosynthesis in Higher Plants':5.0},
  Zoology:{'Animal Kingdom':5.32,'Human Health and Disease':4.59,'Human Reproduction':4.40,'Biomolecules':4.59,'Body Fluids and Circulation':4.0,'Neural Control and Coordination':3.0,'Chemical Coordination and Integration':3.0,'Evolution':4.0}
 };
+function parseLocalDateTime(value){
+ const v=String(value||'').trim();
+ if(!v)return new Date(NaN);
+ const m=v.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/);
+ if(!m)return new Date(v);
+ return new Date(Number(m[1]),Number(m[2])-1,Number(m[3]),Number(m[4]),Number(m[5]),Number(m[6]||0),0);
+}
+function toLocalDateTimeInput(date){
+ const d=date instanceof Date?date:parseLocalDateTime(date);
+ if(Number.isNaN(d.getTime()))return '';
+ const pad=n=>String(n).padStart(2,'0');
+ return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 function getNextTestPrepData(d){const h=getHistory(),out={};for(const [sub,chs] of Object.entries(d.chapters||{})){out[sub]=chs.map(ch=>{let wrong=0,silly=0,skipped=0,attempts=0;h.forEach(r=>(r.questions||[]).forEach(q=>{const s=subjectFor(q.number,r.questions.length);if(s===sub&&q.topic?.trim().toLowerCase()===ch.trim().toLowerCase()){attempts++;if(q.status!=='Correct')wrong++;if(q.silly)silly++;if(q.status==='Skipped')skipped++;}}));const weight=TREND_WEIGHT[sub]?.[ch]||0;const score=wrong*4+silly*2+skipped*1+weight;const priority=score>=15?'HIGH':score>=8?'MEDIUM':'NORMAL';return{ch,wrong,silly,skipped,attempts,weight,priority}}).sort((a,b)=>b.score-a.score)}return out}
 function renderNextTest(){
  const d=getNextTest();
- if(!d){$('nextTestContent').innerHTML=`<form id="nextTestForm" class="panel"><div class="field"><label>Next Test Date & Time</label><input id="ntDate" type="datetime-local" required></div><div class="field"><label>Test Name (optional)</label><input id="ntName" placeholder="e.g. Yakeen Weekly Test 04"></div><div class="field"><label>Test Syllabus</label><div class="next-test-subjects">${SUBJECTS.map(s=>`<div class="report-card"><h3>${s}</h3><div class="chapter-picker">${chapterCheckboxes(s)}</div></div>`).join('')}</div></div><div class="actions"><button class="primary">Save Next Test ✓</button></div></form>`;
- $('nextTestForm').onsubmit=e=>{e.preventDefault();const chapters={};document.querySelectorAll('#nextTestForm input[type=checkbox]:checked').forEach(x=>(chapters[x.dataset.subject]??=[]).push(x.value));if(!Object.values(chapters).some(a=>a.length))return alert('Select at least one chapter.');saveNextTest({date:$('ntDate').value,name:$('ntName').value.trim(),chapters,savedAt:new Date().toISOString()});renderNextTest();toast('Next test preparation saved ✓')};return;}
- const target=new Date(d.date),remaining=target-Date.now(),time=remaining<=0?'Test time reached':formatRemaining(remaining),prep=getNextTestPrepData(d);
- const subjects=Object.entries(d.chapters||{}).map(([s,chs])=>`<div class="next-test-subject report-card"><h3>${escapeHtml(s)}</h3>${chs.map(c=>{const x=prep[s]?.find(z=>z.ch===c)||{wrong:0,silly:0,skipped:0,weight:0,priority:'NORMAL'};return `<label class="next-test-chapter"><input type="checkbox" data-next-sub="${escapeHtml(s)}" data-next-chapter="${escapeHtml(c)}" ${d.completed?.[`${s}::${c}`]?'checked':''}><span><b>${escapeHtml(c)}</b><small>${x.priority} priority${x.weight?` • trend ${x.weight.toFixed(1)}%`:''} • ${x.wrong} recorded non-correct</small></span></label>`}).join('')}</div>`).join('');
+ if(!d){
+  $('nextTestContent').innerHTML=`<form id="nextTestForm" class="panel"><div class="field"><label>Next Test Date & Time</label><input id="ntDate" type="datetime-local" required></div><div class="field"><label>Test Name (optional)</label><input id="ntName" placeholder="e.g. Yakeen Weekly Test 04"></div><div class="field"><label>Test Syllabus</label><div class="next-test-subjects">${SUBJECTS.map(s=>`<div class="report-card"><h3>${s}</h3><div class="chapter-picker">${chapterCheckboxes(s)}</div></div>`).join('')}</div></div><div class="actions"><button class="primary" type="submit">Save Next Test ✓</button></div></form>`;
+  $('nextTestForm').onsubmit=e=>{
+   e.preventDefault();
+   const rawDate=$('ntDate').value;
+   const target=parseLocalDateTime(rawDate);
+   if(Number.isNaN(target.getTime()))return alert('Please choose a valid test date and time.');
+   const chapters={};
+   document.querySelectorAll('#nextTestForm input[type="checkbox"]:checked').forEach(x=>(chapters[x.dataset.subject]??=[]).push(x.value));
+   if(!Object.values(chapters).some(a=>a.length))return alert('Select at least one chapter.');
+   saveNextTest({date:rawDate,name:$('ntName').value.trim(),chapters,completed:{},savedAt:new Date().toISOString()});
+   renderNextTest();
+   updateNextTestCountdown();
+   toast('Next test preparation saved ✓');
+  };
+  return;
+ }
+ const target=parseLocalDateTime(d.date), remaining=target.getTime()-Date.now(), time=remaining>0?formatRemaining(remaining):'Test time reached';
+ const prep=getNextTestPrepData(d);
+ const subjects=Object.entries(d.chapters||{}).map(([sub,chs])=>`<div class="next-test-subject report-card"><h3>${escapeHtml(sub)}</h3>${chs.map(c=>{const x=prep[sub]?.find(z=>z.ch===c)||{wrong:0,silly:0,skipped:0,weight:0,priority:'NORMAL'};const done=!!d.completed?.[`${sub}::${c}`];return `<label class="next-test-chapter ${done?'checked':''}"><input type="checkbox" data-next-sub="${escapeHtml(sub)}" data-next-chapter="${escapeHtml(c)}" ${done?'checked':''}><span><b>${escapeHtml(c)}</b><small>${x.priority} priority${x.weight?` • trend ${x.weight.toFixed(1)}%`:''} • ${x.wrong} recorded non-correct</small></span></label>`}).join('')}</div>`).join('');
  const tasks=Object.entries(prep).flatMap(([s,arr])=>arr.filter(x=>x.priority==='HIGH'||x.wrong>0).slice(0,5).map(x=>`<div class="focus-row"><div><b>${escapeHtml(s)} — ${escapeHtml(x.ch)}</b><small>${x.wrong} non-correct • ${x.silly} silly • ${x.skipped} skipped • trend weight ${x.weight?x.weight.toFixed(1)+'%':'not mapped'}</small></div><span class="badge ${x.priority==='HIGH'?'incorrect':'skipped'}">${x.priority}</span></div>`)).slice(0,8).join('');
- $('nextTestContent').innerHTML=`<div class="next-test-hero report-card"><span class="eyebrow">${escapeHtml(d.name||'NEXT TEST')}</span><h3>${escapeHtml(time)}</h3><small>${target.toLocaleString()}</small><p class="small-muted">Preparation priorities combine your recorded test mistakes with recent NEET chapter-weightage trends. Weightage is trend-based, not an official NTA prediction. citeturn1search0turn1search1turn1search6</p></div><div class="report-card"><h3>🎯 What to revise before the test</h3>${tasks||'<div class="empty">Your saved syllabus is ready. Complete chapters and analyse another test to make priorities more personalised.</div>'}</div><div class="next-test-grid">${subjects}</div><div class="actions"><button class="secondary" id="editNextTest">Edit Syllabus / Date</button><button class="danger" id="clearNextTest">Clear</button></div>`;
- document.querySelectorAll('[data-next-chapter]').forEach(cb=>cb.onchange=e=>{d.completed??={};d.completed[`${e.target.dataset.nextSub}::${e.target.dataset.nextChapter}`]=e.target.checked;saveNextTest(d)});$('editNextTest').onclick=()=>{localStorage.removeItem(NEXT_TEST_KEY);renderNextTest()};$('clearNextTest').onclick=()=>{if(confirm('Clear the saved next test?')){localStorage.removeItem(NEXT_TEST_KEY);renderNextTest()}};
+ $('nextTestContent').innerHTML=`<div class="next-test-hero report-card"><span class="eyebrow">${escapeHtml(d.name||'NEXT TEST')}</span><h3 id="nextTestCountdown">${escapeHtml(time)}</h3><small>${Number.isNaN(target.getTime())?'':target.toLocaleString()}</small><p class="small-muted">Preparation priorities combine your recorded test mistakes with recent NEET chapter-weightage trends. Weightage is trend-based, not an official NTA prediction.</p></div><div class="report-card"><h3>🎯 What to revise before the test</h3>${tasks||'<div class="empty">Your saved syllabus is ready. Complete chapters and analyse another test to make priorities more personalised.</div>'}</div><div class="next-test-grid">${subjects}</div><div class="actions"><button class="secondary" id="editNextTest">Edit Syllabus / Date</button><button class="danger" id="clearNextTest">Clear</button></div>`;
+ document.querySelectorAll('[data-next-chapter]').forEach(cb=>cb.onchange=e=>{
+  const sub=e.target.dataset.nextSub,chapter=e.target.dataset.nextChapter,key=`${sub}::${chapter}`;
+  const latest=getNextTest();
+  if(!latest)return;
+  latest.completed??={};
+  latest.completed[key]=e.target.checked;
+  saveNextTest(latest);
+  e.target.closest('.next-test-chapter')?.classList.toggle('checked',e.target.checked);
+  toast(e.target.checked?'Chapter marked complete ✓':'Chapter marked incomplete');
+ });
+ $('editNextTest').onclick=()=>{
+  const current=getNextTest();
+  if(!current)return;
+  $('nextTestContent').innerHTML=`<form id="nextTestForm" class="panel"><div class="field"><label>Next Test Date & Time</label><input id="ntDate" type="datetime-local" value="${escapeHtml(toLocalDateTimeInput(current.date))}" required></div><div class="field"><label>Test Name (optional)</label><input id="ntName" value="${escapeHtml(current.name||'')}" placeholder="e.g. Yakeen Weekly Test 04"></div><div class="field"><label>Test Syllabus</label><div class="next-test-subjects">${SUBJECTS.map(s=>`<div class="report-card"><h3>${s}</h3><div class="chapter-picker">${SYLLABUS[s].map(c=>{const checked=(current.chapters?.[s]||[]).includes(c);return `<label class="chapter-item"><input type="checkbox" value="${escapeHtml(c)}" data-subject="${s}" ${checked?'checked':''}><span>${escapeHtml(c)}</span></label>`}).join('')}</div></div>`).join('')}</div></div><div class="actions"><button class="primary" type="submit">Save Changes ✓</button><button class="secondary" type="button" id="cancelNextEdit">Cancel</button></div></form>`;
+  $('nextTestForm').onsubmit=e=>{
+   e.preventDefault();
+   const rawDate=$('ntDate').value,target=parseLocalDateTime(rawDate);
+   if(Number.isNaN(target.getTime()))return alert('Please choose a valid test date and time.');
+   const chapters={};document.querySelectorAll('#nextTestForm input[type="checkbox"]:checked').forEach(x=>(chapters[x.dataset.subject]??=[]).push(x.value));
+   if(!Object.values(chapters).some(a=>a.length))return alert('Select at least one chapter.');
+   const completed={};for(const [k,v] of Object.entries(current.completed||{})){const [sub,ch]=k.split('::');if(chapters[sub]?.includes(ch))completed[k]=v;}
+   saveNextTest({date:rawDate,name:$('ntName').value.trim(),chapters,completed,savedAt:current.savedAt||new Date().toISOString()});renderNextTest();updateNextTestCountdown();toast('Next test updated ✓');
+  };
+  $('cancelNextEdit').onclick=()=>renderNextTest();
+ };
+ $('clearNextTest').onclick=()=>{if(confirm('Clear the saved next test?')){localStorage.removeItem(NEXT_TEST_KEY);renderNextTest();toast('Next test cleared')}};
 }
 function formatRemaining(ms){let sec=Math.max(0,Math.floor(ms/1000)),d=Math.floor(sec/86400);sec%=86400;let h=Math.floor(sec/3600);sec%=3600;let m=Math.floor(sec/60);let s=sec%60;return `${d}d ${String(h).padStart(2,'0')}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s left`}
-setInterval(()=>{if($('nextTestScreen')?.classList.contains('active'))renderNextTest()},1000);
+function updateNextTestCountdown(){
+ const d=getNextTest();
+ const el=$('nextTestCountdown');
+ if(!el||!d?.date)return;
+ const target=parseLocalDateTime(d.date);
+ const remaining=target.getTime()-Date.now();
+ el.textContent=remaining>0?formatRemaining(remaining):'Test time reached';
+}
+setInterval(updateNextTestCountdown,1000);
 
 /* ===== Intelligent Revision ===== */
 function renderIntelligentRevision(){
