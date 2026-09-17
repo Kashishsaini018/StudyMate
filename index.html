@@ -31,12 +31,9 @@
 </section>
 
 <section id="practiceScreen" class="screen">
-  <div class="page-head"><div><span class="eyebrow">PRACTICE</span><h2>Turn analysis into improvement.</h2></div></div>
-  <div class="practice-grid">
-    <button class="feature-card" id="generateMock"><span>🎯</span><strong>Generate Mock Test</strong><small>Choose chapters, question count and source level.</small><b>→</b></button>
-    <button class="feature-card" id="uploadQuiz"><span>📄</span><strong>Upload PDF → Quiz</strong><small>Turn a question paper into an interactive quiz.</small><b>→</b></button>
-    
-  </div>
+  <div class="page-head"><div><span class="eyebrow">PRACTICE</span><h2>Practice by subject.</h2><div class="small-muted">Physics, Chemistry, Botany and Zoology practice. Uploaded assignments stay on this device.</div></div></div>
+  <div class="practice-subject-tabs" id="practiceSubjectTabs"></div>
+  <div id="practiceSubjectPanel"></div>
 </section>
 
 <section id="reportsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">REPORTS</span><h2>Your long-term performance.</h2></div></div><div id="reportsContent"></div></section>
@@ -81,6 +78,7 @@
 <div id="navigatorModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">NAVIGATE</span><h3>Question Map</h3></div><button class="icon-btn" id="closeNavigator">×</button></div><div id="questionGrid" class="question-grid"></div></div></div>
 <div id="mockModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">PRACTICE BUILDER</span><h3>Generate Mock Test</h3></div><button class="icon-btn close-modal">×</button></div><div id="mockBuilder"></div></div></div>
 <div id="pdfQuizModal" class="modal hidden"><div class="modal-card large-modal"><div class="modal-head"><div><span class="eyebrow">INTERACTIVE QUIZ</span><h3>Upload Question PDF</h3></div><button class="icon-btn close-modal">×</button></div><div id="pdfQuizBuilder"></div></div></div>
+<div id="assignmentUploadModal" class="modal hidden"><div class="modal-card large-modal"><div class="modal-head"><div><span class="eyebrow">SUBJECT PRACTICE</span><h3>Upload Practice Assignment</h3></div><button class="icon-btn close-modal">×</button></div><div id="assignmentUploadBuilder"></div></div></div>
 <div id="moreModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">MORE</span><h3>StudyMate Tools</h3></div><button class="icon-btn close-modal">×</button></div><div class="more-menu-grid">
 <button data-screen="practice">📚<strong>Practice</strong><small>Mock tests & PDF quiz</small></button><button data-screen="mistakeNotebook">📓<strong>Mistake Notebook</strong><small>Review mistakes & redo</small></button><button data-screen="planner">🎯<strong>Success Planner</strong><small>Study & revision milestones</small></button><button data-screen="daySummary">📋<strong>Day Summary</strong><small>Today's work</small></button><button data-screen="ncert">📖<strong>NCERT Focus Mode</strong><small>Reading & revision tracker</small></button><button data-screen="goals">🎯<strong>Daily Goals</strong><small>Daily targets</small></button><button data-screen="comparison">⚔️<strong>Test Comparison</strong><small>Compare performance</small></button><button data-screen="revision">🧠<strong>Intelligent Revision</strong><small>Spaced revision</small></button><button data-screen="weakness">🔥<strong>Smart Weakness Engine</strong><small>Find priorities</small></button><button data-screen="studymate">🤖<strong>Personal NEET StudyMate</strong><small>What should I do now?</small></button><button data-screen="settings">⚙️<strong>Settings</strong><small>Security, backup & theme</small></button>
 </div></div></div>
@@ -93,6 +91,6 @@
 <div id="toast" class="toast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
-<script src="app.js?v=final57"></script>
+<script src="app.js?v=final58"></script>
 </body>
 </html>
