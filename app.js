@@ -453,8 +453,19 @@ async function renderAssignmentPdfQuestion(q){const el=$('assignmentQuizViewer')
 async function finishAssignmentQuiz(){const d=state.practiceQuiz;if(!d)return;const attempts=getPracticeAttempts();d.questions.forEach(q=>{const u=d.answers[q.number],status=u==null||u===''?'Skipped':(q.answerKey==null?'Answered':(q.info.questionType==='numeric'?numericEqual(u,q.answerKey):u===q.answerKey)?'Correct':'Incorrect');attempts.unshift({id:uid(),assignmentId:d.assignmentId,question:q.number,status,response:u??null,hasKey:q.answerKey!=null,correct:q.answerKey??null,responseLabel:u==null?'—':q.info.questionType==='numeric'?String(u):String.fromCharCode(65+Number(u)),correctLabel:q.answerKey==null?'':q.info.questionType==='numeric'?String(q.answerKey):String.fromCharCode(65+Number(q.answerKey)),date:new Date().toISOString()})});savePracticeAttempts(attempts);const a=d.assignment,vals=attempts.filter(x=>x.assignmentId===d.assignmentId),latest={};vals.forEach(x=>latest[x.question]=x);const items=Object.values(latest).sort((x,y)=>x.question-y.question),scored=items.filter(x=>x.hasKey),correct=items.filter(x=>x.status==='Correct').length,incorrect=items.filter(x=>x.status==='Incorrect').length,skipped=items.filter(x=>x.status==='Skipped').length;const result={title:a.title,practiceType:`${a.brand} • ${a.chapter}`,questions:items.map(x=>({number:x.question,status:x.status,userAnswer:x.response,correctAnswer:x.correct,hasKey:x.hasKey,questionType:a.questions.find(q=>q.number===x.question)?.info.questionType||'mcq',s:a.subject,c:a.chapter})),correct,incorrect,skipped,scored:scored.length,marks:items.reduce((n,x)=>n+(x.status==='Correct'?4:x.status==='Incorrect'?-1:0),0),accuracy:scored.length?correct/scored.length*100:0,elapsed:Date.now()-d.startedAt,hasAnswerKey:scored.length>0,date:new Date().toISOString(),assignmentMode:true};state.practiceQuiz=null;renderPracticeResult(result);showScreen('result')}
 
 async function openPracticeQuiz(data){
- const sessionId=uid();state.practiceQuiz={...data,mode:data.mode||'practice',sessionId,index:0,answers:{},checkedAnswers:{},startedAt:Date.now()};
- state.practiceQuiz.questions.forEach(q=>{q.sessionId=sessionId;if(data.practicePdfId)q.practicePdfId=data.practicePdfId});
+ const sessionId=uid(),questions=data.questions||[];
+ let questionPdf=null,solutionPdf=data.solutionPdf||null;
+ if(data.practicePdfId&&questions.some(q=>!q.pdf)){
+  const blob=await getPracticePdfBlob(data.practicePdfId);
+  if(!blob)throw new Error('The saved question PDF is missing from this device.');
+  questionPdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;
+ }
+ if(data.solutionPdfId&&!solutionPdf){
+  const blob=await getPracticePdfBlob(data.solutionPdfId);
+  if(blob)solutionPdf=await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;
+ }
+ state.practiceQuiz={...data,questions,solutionPdf,mode:data.mode||'practice',sessionId,index:0,answers:{},checkedAnswers:{},startedAt:Date.now()};
+ state.practiceQuiz.questions.forEach(q=>{q.sessionId=sessionId;if(data.practicePdfId){q.practicePdfId=data.practicePdfId;if(!q.pdf&&questionPdf)q.pdf=questionPdf}});
  $('pdfQuizModal').classList.add('hidden');$('mockModal').classList.add('hidden');
  showScreen('practice');
  await renderPracticeQuiz();
@@ -552,7 +563,7 @@ document.querySelectorAll('[data-view-neet-solution]').forEach(btn=>btn.onclick=
  }catch(e){console.warn(e);el.innerHTML='<div class="viewer-placeholder">Could not render the source solution: '+escapeHtml(e.message||'PDF unavailable')+'</div>'}
 });
 document.querySelectorAll('[data-save-practice-mistake]').forEach(btn=>btn.onclick=()=>{const q=result.questions.find(x=>String(x.number)===btn.dataset.savePracticeMistake);if(!q)return;const entry=addMistakeNotebookEntry({question:q,record:{id:'',name:result.title,title:result.title,type:result.practiceType,subject:q.s,chapter:q.c},source:'Practice Quiz'});btn.disabled=true;btn.textContent='✓ Added to '+entry.subject;toast('Added to Mistake Notebook ✓')});
- $('practiceAgainBtn').onclick=()=>{showScreen('practice');openPracticeQuiz({title:result.title,questions:result.questions.map(q=>{const {userAnswer,correctAnswer,status,hasKey,...base}=q;return base}),level:result.level,practiceType:result.practiceType})};
+ $('practiceAgainBtn').onclick=()=>{showScreen('practice');openPracticeQuiz({title:result.title,questions:result.questions.map(q=>{const {userAnswer,correctAnswer,status,hasKey,...base}=q;return base}),level:result.level,practiceType:result.practiceType,mode:result.mode,practicePdfId:result.practicePdfId,solutionPdfId:result.solutionPdfId,solutionPdf:result.solutionPdf,neetFullTest:result.neetFullTest})};
  $('backPracticeBtn').onclick=()=>showScreen('practice');
 }
 /* PDF persistence: uploaded test papers are stored locally in IndexedDB.
