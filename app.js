@@ -512,7 +512,7 @@ function mistakeNotebookEditorSources(){
  const quizzes=getPracticeQuizHistory().map(x=>({id:x.id,kind:'quiz',title:x.title,date:x.date,count:x.questions?.length||0,detail:x.mode==='test'?'PDF Test Mode':'PDF Practice'}));
  return [...tests,...assignments,...quizzes].sort((x,y)=>new Date(y.date||0)-new Date(x.date||0));
 }
-function renderSavedMistakesEditor(){
+async function renderSavedMistakesEditor(){
  const box=$('mistakeNotebookEditorContent');if(!box)return;
  const items=getMistakeNotebook(),counts={};MISTAKE_SECTIONS.forEach(x=>counts[x.id]=items.filter(e=>e.subject===x.id).length);
  const current=MISTAKE_SECTIONS.some(x=>x.id===box.dataset.editorSection)?box.dataset.editorSection:'Physics';
