@@ -1,7 +1,7 @@
 /* StudyMate Final V5.7 — local-first NEET analysis app. */
 const pdfjsLib = window.pdfjsLib || null;
 const $ = id => document.getElementById(id);
-const SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','planner','todo','daySummary','mistakeNotebook','nextTest','ncert','goals','comparison','revision','weakness','studymate'];
+const SCREENS = ['home','practice','reports','history','about','analysis','summary','result','mistakeNotebook'];
 const SUBJECTS = ['Physics','Chemistry','Botany','Zoology'];
 const SYLLABUS = {
  Physics:['Physical World and Measurement','Motion in a Straight Line','Motion in a Plane','Laws of Motion','Work, Energy, and Power','System of Particles and Rotational Motion','Gravitation','Mechanical Properties of Solids','Mechanical Properties of Fluids','Thermal Properties of Matter','Thermodynamics','Kinetic Theory of Gases','Oscillations','Waves','Electric Charges and Fields','Electrostatic Potential and Capacitance','Current Electricity','Moving Charges and Magnetism','Magnetism and Matter','Electromagnetic Induction','Alternating Current','Electromagnetic Waves','Ray Optics and Optical Instruments','Wave Optics','Dual Nature of Radiation and Matter','Atoms','Nuclei','Semiconductor Electronics: Materials, Devices, and Simple Circuits','Experimental Skills'],
@@ -540,26 +540,16 @@ $('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')$('saveNameBtn'
 refreshHome();renderReports();renderCountdown();lockIfNeeded();setInterval(refreshHome,60000);setInterval(renderCountdown,1000);setTimeout(ensureName,250);
 
 /* ===== FINAL UX: animations, Success Planner, daily to-do, NEET motivation ===== */
-const EXTRA_SCREENS = ['home','practice','reports','history','about','analysis','summary','result','settings','planner','todo','daySummary','mistakeNotebook','ncert','goals','comparison','revision','weakness','studymate','nextTest'];
+const EXTRA_SCREENS = ['home','practice','reports','history','about','analysis','summary','result','mistakeNotebook'];
 function showScreen(name){
+  if(!EXTRA_SCREENS.includes(name))return;
   EXTRA_SCREENS.forEach(s=>$(s+'Screen')?.classList.toggle('active',s===name));
   document.querySelectorAll('.nav-btn,[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));
   if(name==='home'){if(state.test&&state.questions?.length&&document.getElementById('analysisScreen')?.classList.contains('active'))saveAnalysisDraft();refreshHome();}
-  if(name==='history') renderHistory();
-  if(name==='reports') renderReports();
-  if(name==='settings') renderSettings();
-  if(name==='planner') renderSuccessPlanner();
-  if(name==='todo') renderTodo();
-  if(name==='daySummary') renderDaySummary();
-  if(name==='mistakeNotebook') renderMistakeNotebook();
-  if(name==='ncert') renderNcertFocus();
-  if(name==='goals') renderDailyGoals();
-  if(name==='comparison') renderTestComparison();
-  if(name==='revision') renderIntelligentRevision();
-  if(name==='weakness') renderSmartWeakness();
-  if(name==='studymate') renderPersonalStudyMate();
-  if(name==='nextTest') renderNextTest();
-  window.scrollTo({top:0,behavior:'smooth'});
+  if(name==='history')renderHistory();
+  if(name==='reports')renderReports();
+  if(name==='mistakeNotebook')renderMistakeNotebook();
+  if(name==='practice')renderPracticeLanding();
 }
 
 // Correct navigation for the newly interactive home cards.
