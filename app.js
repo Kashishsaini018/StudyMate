@@ -527,8 +527,9 @@ async function renderSavedMistakesEditor(){
 function renderMistakeAnalysis(){
  const box=$('mistakeNotebookEditorContent');if(!box)return;
  const sources=mistakeNotebookEditorSources();
- box.innerHTML='<div class="page-head"><div><span class="eyebrow">MISTAKE NOTEBOOK EDITOR</span><h2>Choose a test</h2><p class="small-muted">Open any previous test or PDF quiz, then select only the incorrect questions you want to save.</p></div></div><div class="mistake-source-list">'+(sources.map(x=>'<button type="button" class="mistake-source-row" data-mistake-source="'+escapeHtml(x.kind)+'::'+escapeHtml(x.id)+'"><span><strong>'+escapeHtml(x.title)+'</strong><small>'+escapeHtml(x.detail)+' • '+new Date(x.date||Date.now()).toLocaleDateString()+'</small></span><b>'+x.count+' questions →</b></button>').join('')||'<div class="empty">No test records yet. Complete a test or PDF quiz first.</div>')+'</div>';
+ box.innerHTML='<div class="page-head"><div><span class="eyebrow">MISTAKE NOTEBOOK EDITOR</span><h2>Choose a test</h2><p class="small-muted">Open any previous test or PDF quiz, then select only the incorrect questions you want to save.</p></div><div class="actions"><button type="button" class="secondary" id="manageSavedMistakes">✎ Edit / remove saved questions</button></div></div><div class="mistake-source-list">'+(sources.map(x=>'<button type="button" class="mistake-source-row" data-mistake-source="'+escapeHtml(x.kind)+'::'+escapeHtml(x.id)+'"><span><strong>'+escapeHtml(x.title)+'</strong><small>'+escapeHtml(x.detail)+' • '+new Date(x.date||Date.now()).toLocaleDateString()+'</small></span><b>'+x.count+' questions →</b></button>').join('')||'<div class="empty">No test records yet. Complete a test or PDF quiz first.</div>')+'</div>';
  box.querySelectorAll('[data-mistake-source]').forEach(b=>b.onclick=()=>{const [kind,id]=b.dataset.mistakeSource.split('::');renderMistakeSourceQuestions(kind,id)});
+ $('manageSavedMistakes').onclick=renderSavedMistakesEditor;
 }
 async function renderMistakeSourceQuestions(kind,id){
  const box=$('mistakeNotebookEditorContent');if(!box)return;
