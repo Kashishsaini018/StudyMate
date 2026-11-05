@@ -1,7 +1,7 @@
 /* StudyMate Final V5.7 — local-first NEET analysis app. */
 const pdfjsLib = window.pdfjsLib || null;
 const $ = id => document.getElementById(id);
-const SCREENS = ['home','practice','reports','history','about','analysis','summary','result','mistakeNotebook','mistakeAnalysis'];
+const SCREENS = ['home','practice','reports','history','about','analysis','summary','result','mistakeNotebook','mistakeNotebookEditor'];
 const SUBJECTS = ['Physics','Chemistry','Botany','Zoology'];
 const SYLLABUS = {
  Physics:['Physical World and Measurement','Motion in a Straight Line','Motion in a Plane','Laws of Motion','Work, Energy, and Power','System of Particles and Rotational Motion','Gravitation','Mechanical Properties of Solids','Mechanical Properties of Fluids','Thermal Properties of Matter','Thermodynamics','Kinetic Theory of Gases','Oscillations','Waves','Electric Charges and Fields','Electrostatic Potential and Capacitance','Current Electricity','Moving Charges and Magnetism','Magnetism and Matter','Electromagnetic Induction','Alternating Current','Electromagnetic Waves','Ray Optics and Optical Instruments','Wave Optics','Dual Nature of Radiation and Matter','Atoms','Nuclei','Semiconductor Electronics: Materials, Devices, and Simple Circuits','Experimental Skills'],
@@ -17,7 +17,7 @@ function uid(){return crypto.randomUUID?crypto.randomUUID():Date.now().toString(
 function istDateKey(date=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(date)}
 function istDateTimeParts(date=new Date()){const parts=new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Kolkata',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).formatToParts(date);const o={};parts.forEach(p=>o[p.type]=p.value);return o}
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2200)}
-function showScreen(name){SCREENS.forEach(s=>$(s+'Screen')?.classList.toggle('active',s===name));document.querySelectorAll('.nav-btn,[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));if(name==='home')refreshHome();if(name==='practice'&&!state.practiceQuiz)renderPracticeLanding();if(name==='mistakeAnalysis')renderMistakeAnalysis();if(name==='history')renderHistory();if(name==='reports')renderReports();if(name==='settings')renderSettings();if(name==='daySummary')renderDaySummary();if(name==='mistakeNotebook')renderMistakeNotebook();if(name==='planner')renderSuccessPlanner();if(name==='nextTest')renderNextTest();if(name==='ncert')renderNcert?.();if(name==='goals')renderDailyGoals();if(name==='comparison')renderTestComparison();if(name==='revision')renderIntelligentRevision();if(name==='weakness')renderSmartWeakness();if(name==='studymate')renderPersonalStudyMate();}
+function showScreen(name){SCREENS.forEach(s=>$(s+'Screen')?.classList.toggle('active',s===name));document.querySelectorAll('.nav-btn,[data-screen]').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));if(name==='home')refreshHome();if(name==='practice'&&!state.practiceQuiz)renderPracticeLanding();if(name==='mistakeNotebookEditor')renderMistakeAnalysis();if(name==='history')renderHistory();if(name==='reports')renderReports();if(name==='settings')renderSettings();if(name==='daySummary')renderDaySummary();if(name==='mistakeNotebook')renderMistakeNotebook();if(name==='planner')renderSuccessPlanner();if(name==='nextTest')renderNextTest();if(name==='ncert')renderNcert?.();if(name==='goals')renderDailyGoals();if(name==='comparison')renderTestComparison();if(name==='revision')renderIntelligentRevision();if(name==='weakness')renderSmartWeakness();if(name==='studymate')renderPersonalStudyMate();}
 document.querySelectorAll('[data-screen]').forEach(b=>b.addEventListener('click',()=>showScreen(b.dataset.screen)));
 $('settingsBtn')?.addEventListener('click',()=>showScreen('settings'));$('settingsBtnMobile')?.addEventListener('click',()=>showScreen('settings'));$('mobileMenuBtn')?.addEventListener('click',()=>openModal('moreModal'));
 $('.brand-wrap')?.addEventListener('click',()=>{if(state.test&&state.questions?.length&&document.getElementById('analysisScreen')?.classList.contains('active'))saveAnalysisDraft();showScreen('home')});
@@ -499,26 +499,26 @@ async function renderMistakeNotebook(){
  box.innerHTML=`<div class="mistake-notebook-heading"><div><span class="eyebrow">SAVED QUESTIONS</span><h3>${current}</h3></div><button type="button" class="primary" id="openMistakeAnalysis">＋ Add questions</button></div><div class="mistake-subject-tabs">${MISTAKE_SECTIONS.map(s=>`<button type="button" data-mistake-section="${s.id}" class="${s.id===current?'active':''}">${s.label}<small>${counts[s.id]}</small></button>`).join('')}</div><div class="mistake-list">${selected.map(entry=>{const q=entry.question||{};const safeId=entry.id.replace(/[^a-zA-Z0-9_-]/g,'_');return `<article class="mistake-entry"><div class="mistake-entry-head"><strong>Question ${escapeHtml(entry.questionNumber)}</strong><span class="topic-pill">${escapeHtml(entry.chapter||current)}</span></div>${q.questionText?`<div class="mistake-question-text">${escapeHtml(q.questionText)}</div>`:''}<div class="mistake-question-viewer" id="mistakeViewer_${safeId}"><div class="viewer-placeholder">${q.pdf?'Loading saved question…':'Question saved from quiz'}</div></div>${q.options?.length?`<ol class="mistake-option-list" type="A">${q.options.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ol>`:''}</article>`}).join('')||'<div class="empty">No questions saved here yet. Tap “Add questions” to choose mistakes from a test.</div>'}</div>`;
  box.dataset.activeSection=current;
  box.querySelectorAll('[data-mistake-section]').forEach(b=>b.onclick=()=>{box.dataset.activeSection=b.dataset.mistakeSection;renderMistakeNotebook()});
- $('openMistakeAnalysis').onclick=()=>showScreen('mistakeAnalysis');
+ $('openMistakeAnalysis').onclick=()=>showScreen('mistakeNotebookEditor');
  for(const entry of selected){const q=entry.question||{},el=$('mistakeViewer_'+entry.id.replace(/[^a-zA-Z0-9_-]/g,'_'));if(!el)continue;if(entry.practicePdfId)await renderPracticeMistakePdf(entry.practicePdfId,entry.questionNumber,el);else if(q.pdf){const record=getHistory().find(x=>x.id===entry.recordId);if(record)await renderMistakeEntryPdf({record,q:{number:entry.questionNumber}},el)}}
 }
 const MISTAKE_QUIZ_HISTORY_KEY='studymate_practice_quiz_history_v1';
 function getPracticeQuizHistory(){try{return JSON.parse(localStorage.getItem(MISTAKE_QUIZ_HISTORY_KEY)||'[]')}catch{return[]}}
 function savePracticeQuizHistory(items){localStorage.setItem(MISTAKE_QUIZ_HISTORY_KEY,JSON.stringify(items.slice(0,200)))}
-function mistakeAnalysisSources(){
+function mistakeNotebookEditorSources(){
  const tests=getHistory().map(r=>({id:r.id,kind:'analysis',title:r.name||'Test analysis',date:r.date,count:r.questions?.length||0,detail:r.type||'Test Analysis'}));
- const assignments=getPracticeAssignments().map(x=>({id:x.id,kind:'assignment',title:x.title,date:x.createdAt,count:x.totalQuestions||x.questions?.length||0,detail:x.subject+' • '+x.chapter}));
+ const attempts=getPracticeAttempts();const assignments=getPracticeAssignments().filter(x=>attempts.some(a=>a.assignmentId===x.id)).map(x=>({id:x.id,kind:'assignment',title:x.title,date:x.createdAt,count:x.totalQuestions||x.questions?.length||0,detail:x.subject+' • '+x.chapter}));
  const quizzes=getPracticeQuizHistory().map(x=>({id:x.id,kind:'quiz',title:x.title,date:x.date,count:x.questions?.length||0,detail:x.mode==='test'?'PDF Test Mode':'PDF Practice'}));
  return [...tests,...assignments,...quizzes].sort((x,y)=>new Date(y.date||0)-new Date(x.date||0));
 }
 function renderMistakeAnalysis(){
- const box=$('mistakeAnalysisContent');if(!box)return;
- const sources=mistakeAnalysisSources();
- box.innerHTML='<div class="page-head"><div><span class="eyebrow">MISTAKE NOTEBOOK</span><h2>Choose a test</h2><p class="small-muted">Open any previous test or PDF quiz, then select only the incorrect questions you want to save.</p></div></div><div class="mistake-source-list">'+(sources.map(x=>'<button type="button" class="mistake-source-row" data-mistake-source="'+escapeHtml(x.kind)+'::'+escapeHtml(x.id)+'"><span><strong>'+escapeHtml(x.title)+'</strong><small>'+escapeHtml(x.detail)+' • '+new Date(x.date||Date.now()).toLocaleDateString()+'</small></span><b>'+x.count+' questions →</b></button>').join('')||'<div class="empty">No test records yet. Complete a test or PDF quiz first.</div>')+'</div>';
+ const box=$('mistakeNotebookEditorContent');if(!box)return;
+ const sources=mistakeNotebookEditorSources();
+ box.innerHTML='<div class="page-head"><div><span class="eyebrow">MISTAKE NOTEBOOK EDITOR</span><h2>Choose a test</h2><p class="small-muted">Open any previous test or PDF quiz, then select only the incorrect questions you want to save.</p></div></div><div class="mistake-source-list">'+(sources.map(x=>'<button type="button" class="mistake-source-row" data-mistake-source="'+escapeHtml(x.kind)+'::'+escapeHtml(x.id)+'"><span><strong>'+escapeHtml(x.title)+'</strong><small>'+escapeHtml(x.detail)+' • '+new Date(x.date||Date.now()).toLocaleDateString()+'</small></span><b>'+x.count+' questions →</b></button>').join('')||'<div class="empty">No test records yet. Complete a test or PDF quiz first.</div>')+'</div>';
  box.querySelectorAll('[data-mistake-source]').forEach(b=>b.onclick=()=>{const [kind,id]=b.dataset.mistakeSource.split('::');renderMistakeSourceQuestions(kind,id)});
 }
 async function renderMistakeSourceQuestions(kind,id){
- const box=$('mistakeAnalysisContent');if(!box)return;
+ const box=$('mistakeNotebookEditorContent');if(!box)return;
  box.innerHTML='<div class="empty">Loading incorrect questions…</div>';
  let source=null,items=[];
  if(kind==='analysis'){
