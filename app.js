@@ -282,8 +282,48 @@ function generateMock(){
  closeModal('mockModal');
  openPracticeQuiz({title:`Generated Mock — ${level}`,questions,level,practiceType:type});
 }
-async function renderPairedNeetTestBuilder(){const b=$('pdfQuizBuilder');if(!b)return;b.innerHTML=`<div class="eyebrow">180-QUESTION NEET TEST</div><p class="small-muted">Upload the question paper and its matching hints / solutions PDF. StudyMate validates Q1–Q180 and the answer key before starting.</p><div class="field"><label>Question paper PDF</label><input id="neetQuestionPdf" type="file" accept="application/pdf"></div><div class="field"><label>Hints and solutions PDF</label><input id="neetSolutionPdf" type="file" accept="application/pdf"></div><div class="field"><label>Test name</label><input id="neetTestName" value="NEET Full Test (180 Questions)" maxlength="100"></div><div class="actions"><button class="primary" type="button" id="startPairedNeetTest">Analyze PDFs & Start Test →</button></div><p class="small-muted">Scoring: +4 correct, −1 incorrect, 0 unanswered. Sections: Physics 1–45, Chemistry 46–90, Botany 91–135, Zoology 136–180.</p>`;$('startPairedNeetTest').onclick=startPairedNeetTest}
-async function startPairedNeetTest(){const qFile=$('neetQuestionPdf')?.files?.[0],sFile=$('neetSolutionPdf')?.files?.[0];if(!qFile||!sFile)return alert('Choose both the question paper and matching solutions PDF.');if(!pdfjsLib)return alert('PDF engine unavailable. Reload StudyMate and try again.');const btn=$('startPairedNeetTest');btn.disabled=true;btn.textContent='Analyzing PDFs…';try{const qPdf=await pdfjsLib.getDocument({data:await qFile.arrayBuffer()}).promise,sPdf=await pdfjsLib.getDocument({data:await sFile.arrayBuffer()}).promise,qMap=await extractPdfMap(qPdf),nums=[...qMap.keys()].sort((a,b)=>a-b);if(nums.length!==180||nums.some((n,i)=>n!==i+1))throw new Error('Expected exactly Q1–Q180; detected '+nums.length+' question numbers.');const parsed=await extractPairedSolutionData(sPdf),missing=nums.filter(n=>parsed.answerKey[n]===undefined);if(missing.length)throw new Error('Answer key missing '+missing.length+' entries, including '+missing.slice(0,10).map(n=>'Q'+n).join(', ')+'.');const missingSolutions=nums.filter(n=>!parsed.solutionMap.has(n));if(missingSolutions.length)throw new Error('Could not match solution sections for '+missingSolutions.length+' questions, including '+missingSolutions.slice(0,8).map(n=>'Q'+n).join(', ')+'.');const qId=uid(),sId=uid();await savePracticePdfBlob(qId,qFile);await savePracticePdfBlob(sId,sFile);const questions=nums.map(n=>{const subject=n<=45?'Physics':n<=90?'Chemistry':n<=135?'Botany':'Zoology',info=qMap.get(n);return{number:n,pdf:qPdf,info,practicePdfId:qId,questionType:info.questionType||'mcq',answerKey:parsed.answerKey[n],solutionInfo:parsed.solutionMap.get(n),subject,s:subject,c:'Chapter not classified'}});const title=$('neetTestName')?.value.trim()||qFile.name.replace(/\.pdf$/i,'');closeModal('pdfQuizModal');await openPracticeQuiz({title,questions,pdf:true,practicePdfId:qId,mode:'test',practiceType:'NEET Full Test • 180 Questions',solutionPdf:sPdf,solutionPdfId:sId,neetFullTest:true})}catch(e){console.error('Paired NEET PDF import failed:',e);alert('Could not safely start the 180-question test. '+e.message)}finally{if($('startPairedNeetTest')){btn.disabled=false;btn.textContent='Analyze PDFs & Start Test →'}}}
+async function renderPairedNeetTestBuilder(){
+ const b=$('pdfQuizBuilder');if(!b)return;
+ b.innerHTML=`<div class="eyebrow">180-QUESTION NEET TEST</div>
+ <p class="small-muted">Upload the original question paper and its matching hints / solutions PDF. StudyMate checks all 180 question numbers, the complete answer key and the matching solution sections before opening the quiz.</p>
+ <div class="field"><label>Question paper PDF</label><input id="neetQuestionPdf" type="file" accept="application/pdf"></div>
+ <div class="field"><label>Hints and solutions PDF</label><input id="neetSolutionPdf" type="file" accept="application/pdf"></div>
+ <div class="field"><label>Test name</label><input id="neetTestName" value="NEET Full Test (180 Questions)" maxlength="100"></div>
+ <div class="field"><label>Choose mode for this upload</label><div class="segmented"><label><input type="radio" name="neetQuizMode" value="practice"> Practice Mode</label><label><input type="radio" name="neetQuizMode" value="test"> Test Mode</label></div><div class="small-muted">Choose every time you upload a test. Practice Mode gives answer feedback; Test Mode reveals the analysis only after submission.</div></div>
+ <div class="actions"><button class="primary" type="button" id="startPairedNeetTest">Analyze PDFs & Start Test →</button></div>
+ <p class="small-muted">NEET scoring: +4 correct, −1 incorrect, 0 unanswered. Subject ranges: Physics Q1–45, Chemistry Q46–90, Botany Q91–135, Zoology Q136–180.</p>`;
+ $('startPairedNeetTest').onclick=startPairedNeetTest;
+}
+async function startPairedNeetTest(){
+ const qFile=$('neetQuestionPdf')?.files?.[0],sFile=$('neetSolutionPdf')?.files?.[0],mode=document.querySelector('input[name="neetQuizMode"]:checked')?.value;
+ if(!qFile||!sFile)return alert('Choose both the question paper and matching solutions PDF.');
+ if(!mode)return alert('Choose Practice Mode or Test Mode for this upload.');
+ if(!pdfjsLib)return alert('PDF engine unavailable. Reload StudyMate and try again.');
+ const btn=$('startPairedNeetTest');btn.disabled=true;btn.textContent='Analyzing PDFs…';
+ try{
+  const qPdf=await pdfjsLib.getDocument({data:await qFile.arrayBuffer()}).promise;
+  const sPdf=await pdfjsLib.getDocument({data:await sFile.arrayBuffer()}).promise;
+  const qMap=await extractPdfMap(qPdf),nums=[...qMap.keys()].sort((a,b)=>a-b);
+  const missingQuestions=Array.from({length:180},(_,i)=>i+1).filter(n=>!qMap.has(n));
+  const unexpected=nums.filter(n=>n<1||n>180);
+  if(missingQuestions.length||unexpected.length||nums.length!==180)throw new Error(`Question-paper check failed: detected ${nums.length} numbered questions; missing ${missingQuestions.length?missingQuestions.slice(0,12).map(n=>'Q'+n).join(', '):'none'}${missingQuestions.length>12?'…':''}. Please use the matching complete 180-question paper.`);
+  const parsed=await extractPairedSolutionData(sPdf);
+  const missingKey=nums.filter(n=>!Number.isInteger(parsed.answerKey[n])||parsed.answerKey[n]<0||parsed.answerKey[n]>3);
+  if(missingKey.length)throw new Error(`Answer-key check failed for ${missingKey.length} questions: ${missingKey.slice(0,12).map(n=>'Q'+n).join(', ')}${missingKey.length>12?'…':''}.`);
+  const missingSolutions=nums.filter(n=>!parsed.solutionMap.has(n));
+  if(missingSolutions.length)throw new Error(`Solution matching failed for ${missingSolutions.length} questions: ${missingSolutions.slice(0,12).map(n=>'Q'+n).join(', ')}${missingSolutions.length>12?'…':''}. The test was not started to avoid mismatched explanations.`);
+  const qId=uid(),sId=uid();
+  await savePracticePdfBlob(qId,qFile);await savePracticePdfBlob(sId,sFile);
+  const questions=nums.map(n=>{
+   const subject=n<=45?'Physics':n<=90?'Chemistry':n<=135?'Botany':'Zoology',info=qMap.get(n);
+   return{number:n,pdf:qPdf,info,practicePdfId:qId,questionType:info.questionType||'mcq',answerKey:parsed.answerKey[n],solutionInfo:parsed.solutionMap.get(n),subject,s:subject,c:'Chapter not classified'};
+  });
+  const title=$('neetTestName')?.value.trim()||qFile.name.replace(/\.pdf$/i,'');
+  closeModal('pdfQuizModal');
+  await openPracticeQuiz({title,questions,pdf:true,practicePdfId:qId,mode,practiceType:'NEET Full Test • 180 Questions',solutionPdf:sPdf,solutionPdfId:sId,neetFullTest:true});
+ }catch(e){console.error('Paired NEET PDF import failed:',e);alert('StudyMate could not safely start this test. '+e.message)}
+ finally{const current=$('startPairedNeetTest');if(current){current.disabled=false;current.textContent='Analyze PDFs & Start Test →'}}
+}
 async function extractPairedSolutionData(pdf){
  const answerKey={},solutionMap=new Map(),texts=[],answerPages=[];
  for(let p=1;p<=pdf.numPages;p++){const page=await pdf.getPage(p),content=await page.getTextContent(),txt=pageText(content);texts.push(txt);if(/ANSWER\s*KEY|ANSWERS?\s*KEY/i.test(txt))answerPages.push(p);}
@@ -296,8 +336,27 @@ async function extractPairedSolutionData(pdf){
  for(let p=solutionStart;p<=pdf.numPages;p++){const page=await pdf.getPage(p),vp=page.getViewport({scale:1}),content=await page.getTextContent(),labels=findPracticeLabels(content.items,vp);if(!labels.length)continue;const split=vp.width/2,left=labels.filter(x=>x.x<split),right=labels.filter(x=>x.x>=split),cols=left.length>=2&&right.length>=2?[left,right]:[labels];for(const col of cols){col.sort((a,b)=>a.top-b.top);for(let i=0;i<col.length;i++){const q=col[i],next=col[i+1],two=cols.length===2,isLeft=two&&q.x<split,x0=two?(isLeft?Math.max(0,Math.min(q.x-14,split-18)):Math.max(split+8,q.x-14)):18,x1=two?(isLeft?split-8:vp.width-18):vp.width-18,top=Math.max(0,q.top-8),bottom=next?Math.max(top+35,next.top-7):vp.height-10;if(q.number>=1&&q.number<=180&&!solutionMap.has(q.number))solutionMap.set(q.number,{pageNo:p,x0,x1,top,bottom});}}}
  return{answerKey,solutionMap,solutionStart};
 }
-function renderPdfQuizBuilder(){const b=$('pdfQuizBuilder');b.innerHTML='<div class="field"><label>Question PDF</label><input id="quizPdfInput" type="file" accept="application/pdf"><div id="quizPdfInfo" class="small-muted"></div></div><div class="field"><label>Answer Key</label><div class="segmented"><label><input type="radio" name="quizKeyMode" value="manual" checked> Enter manually</label><label><input type="radio" name="quizKeyMode" value="file"> Upload .txt</label></div><div id="quizKeyArea"></div></div><div class="actions"><button class="primary" id="startPdfQuiz">Create Interactive Quiz</button></div>';$('quizPdfInput').onchange=e=>{const f=e.target.files[0];$('quizPdfInfo').textContent=f?`${f.name} • ${(f.size/1048576).toFixed(2)} MB`:''};const renderKey=()=>{const mode=document.querySelector('input[name=quizKeyMode]:checked')?.value;if(mode==='file'){$('quizKeyArea').innerHTML='<input id="quizAnswerKeyFile" type="file" accept=".txt,text/plain"><div id="quizKeyInfo" class="small-muted">Example: 1A 2B 3C 4D</div>';$('quizAnswerKeyFile').onchange=e=>{const f=e.target.files[0];$('quizKeyInfo').textContent=f?`${f.name} selected`:''}}else{$('quizKeyArea').innerHTML='<input id="quizAnswerKey" placeholder="Example: 1A 2C 3B 4D"><div class="small-muted">Example formats: 1A 2B 3C… or one answer per line.</div>'}};document.querySelectorAll('input[name=quizKeyMode]').forEach(r=>r.onchange=renderKey);renderKey();$('startPdfQuiz').onclick=startPdfQuiz}
-async function startPdfQuiz(){const file=$('quizPdfInput')?.files?.[0];if(!file)return alert('Choose a PDF.');if(!pdfjsLib)return alert('PDF engine unavailable.');try{const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;const map=await extractPdfMap(pdf);const nums=[...map.keys()].sort((a,b)=>a-b);if(!nums.length)return alert('No question labels were detected in this PDF.');const orderedNums=nums.slice();const practicePdfId=uid();await savePracticePdfBlob(practicePdfId,file);const mode=document.querySelector('input[name=quizKeyMode]:checked')?.value||'manual';let key={};if(mode==='file'){const kf=$('quizAnswerKeyFile')?.files?.[0];if(kf){key=parseAnswerKey(await kf.text());}else return alert('Choose a .txt answer key or select Enter manually.');}else key=parseAnswerKey($('quizAnswerKey')?.value||'');const qs=orderedNums.map(n=>{const info=map.get(n),rawKey=key[n],type=info.questionType||((rawKey?.kind==='numeric'&&Math.abs(Number(rawKey.value))>4)?'numeric':'mcq');let answerKey=null;if(rawKey)answerKey=type==='numeric'?Number(rawKey.value):(rawKey.kind==='letter'?rawKey.value:Math.max(0,Math.min(3,Number(rawKey.value)-1)));return{number:n,pdf,info,practicePdfId,questionType:type,answer:null,answerKey};});closeModal('pdfQuizModal');openPracticeQuiz({title:file.name,questions:qs,pdf:true,practicePdfId})}catch(e){console.error(e);alert('Could not parse the PDF or answer key.')}}
+function renderPdfQuizBuilder(){
+ const b=$('pdfQuizBuilder');if(!b)return;
+ b.innerHTML='<div class="field"><label>Question PDF</label><input id="quizPdfInput" type="file" accept="application/pdf"><div id="quizPdfInfo" class="small-muted"></div></div><div class="field"><label>Choose mode for this upload</label><div class="segmented"><label><input type="radio" name="pdfQuizMode" value="practice"> Practice Mode</label><label><input type="radio" name="pdfQuizMode" value="test"> Test Mode</label></div></div><div class="field"><label>Answer Key</label><div class="segmented"><label><input type="radio" name="quizKeyMode" value="manual" checked> Enter manually</label><label><input type="radio" name="quizKeyMode" value="file"> Upload .txt</label></div><div id="quizKeyArea"></div></div><div class="actions"><button class="primary" id="startPdfQuiz">Create Interactive Quiz</button></div>';
+ $('quizPdfInput').onchange=e=>{const f=e.target.files[0];$('quizPdfInfo').textContent=f?`${f.name} • ${(f.size/1048576).toFixed(2)} MB`:''};
+ const renderKey=()=>{const mode=document.querySelector('input[name=quizKeyMode]:checked')?.value;if(mode==='file'){$('quizKeyArea').innerHTML='<input id="quizAnswerKeyFile" type="file" accept=".txt,text/plain"><div id="quizKeyInfo" class="small-muted">Example: 1A 2B 3C 4D</div>';$('quizAnswerKeyFile').onchange=e=>{const f=e.target.files[0];$('quizKeyInfo').textContent=f?`${f.name} selected`:''}}else{$('quizKeyArea').innerHTML='<input id="quizAnswerKey" placeholder="Example: 1A 2C 3B 4D"><div class="small-muted">Example formats: 1A 2B 3C… or one answer per line.</div>'}};
+ document.querySelectorAll('input[name=quizKeyMode]').forEach(r=>r.onchange=renderKey);renderKey();$('startPdfQuiz').onclick=startPdfQuiz;
+}
+async function startPdfQuiz(){
+ const file=$('quizPdfInput')?.files?.[0],mode=document.querySelector('input[name="pdfQuizMode"]:checked')?.value;
+ if(!file)return alert('Choose a PDF.');if(!mode)return alert('Choose Practice Mode or Test Mode for this upload.');if(!pdfjsLib)return alert('PDF engine unavailable.');
+ try{
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise,map=await extractPdfMap(pdf),nums=[...map.keys()].sort((a,b)=>a-b);
+  if(!nums.length)return alert('No question labels were detected in this PDF.');
+  const practicePdfId=uid();await savePracticePdfBlob(practicePdfId,file);
+  const keyMode=document.querySelector('input[name=quizKeyMode]:checked')?.value||'manual';let key={};
+  if(keyMode==='file'){const kf=$('quizAnswerKeyFile')?.files?.[0];if(!kf)return alert('Choose a .txt answer key or select Enter manually.');key=parseAnswerKey(await kf.text())}
+  else key=parseAnswerKey($('quizAnswerKey')?.value||'');
+  const qs=nums.map(n=>{const info=map.get(n),rawKey=key[n],type=info.questionType||'mcq';let answerKey=null;if(rawKey)answerKey=type==='numeric'?Number(rawKey.value):(rawKey.kind==='letter'?rawKey.value:Math.max(0,Math.min(3,Number(rawKey.value)-1)));return{number:n,pdf,info,practicePdfId,questionType:type,answer:null,answerKey}});
+  closeModal('pdfQuizModal');await openPracticeQuiz({title:file.name,questions:qs,pdf:true,practicePdfId,mode});
+ }catch(e){console.error(e);alert('Could not parse the PDF or answer key: '+(e.message||'Unknown error'))}
+}
 async function extractPdfMap(pdf){
  const candidates=[];
  for(let p=1;p<=pdf.numPages;p++){
