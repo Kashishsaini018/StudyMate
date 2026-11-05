@@ -3,94 +3,69 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#f7f8fc">
 <meta name="mobile-web-app-capable" content="yes">
-<title>StudyMate — NEET Test Analysis</title>
-<link rel="manifest" href="manifest.json?v=final55">
+<title>StudyMate — NEET Score Builder</title>
+<link rel="manifest" href="manifest.json?v=focused1">
 <link rel="icon" href="icons/icon-192-v18.png">
-<link rel="stylesheet" href="style.css?v=final55">
+<link rel="stylesheet" href="style.css?v=focused1">
 </head>
 <body>
 <div id="app">
-<header class="topbar home-topbar"><div class="brand-wrap"><img class="brand-logo" src="icons/studymate-logo.png" alt="StudyMate"><div><div class="brand">StudyMate</div><div class="brand-subtitle">NEET 2027</div></div></div><button class="icon-btn more-top-btn" id="mobileMenuBtn" aria-label="More">⋮</button></header>
+<header class="topbar home-topbar"><div class="brand-wrap"><img class="brand-logo" src="icons/studymate-logo.png" alt="StudyMate"><div><div class="brand">StudyMate</div><div class="brand-subtitle">NEET 2027 • FOCUS MODE</div></div></div></header>
 <main>
 <section id="homeScreen" class="screen active">
-  <div class="final-home">
-    <div class="final-greeting"><span class="eyebrow">STUDYMATE • NEET 2027 • YAKEEN 2.0 DROPper MODE</span><h1 id="greetingTitle">Good Morning!</h1><p id="dailyQuote">Your dream deserves your consistency. 🩺</p></div>
-    <button id="startBtn" class="primary final-start">📝 <span>Start New Test Analysis</span><b>→</b></button>
-    <div id="resumeTestCard" class="resume-test-card hidden"></div>
-    <div class="final-pattern"><div class="section-title"><h2>Test Pattern</h2><span>Your core tools</span></div><div class="pattern-grid">
-      <button class="pattern-card" data-screen="history">📜<strong>History</strong><small>Past tests</small></button>
-      <button class="pattern-card" data-screen="reports">📊<strong>Reports</strong><small>Performance</small></button>
-      <button class="pattern-card" data-screen="planner">🎯<strong>Success Planner</strong><small>Chapters & milestones</small></button>
-      <button class="pattern-card" data-screen="daySummary">📋<strong>Day Summary</strong><small>Record today's work</small></button>
-    </div></div>
-    <button class="next-test-home-card" id="nextTestHome"><span>📝</span><span><strong>Next Test Preparation</strong><small>Set your next test syllabus, see time left and prepare by priority.</small></span><b>→</b></button><button class="mistake-home-card" id="mistakeNotebookHome"><span class="mistake-big-icon">📓</span><span><strong>Mistake Notebook</strong><small>Review every mistake from your analysed tests and practice them again.</small></span><b>→</b></button>
-    <div class="neet-countdown-card"><div><span class="eyebrow">🩺 NEET 2027 COUNTDOWN</span><strong id="neetCountdown">Loading…</strong><small id="neetCountdownNote">Target date can be changed in Settings.</small></div><span class="countdown-mark">⏳</span></div>
+ <div class="focused-home">
+  <div class="focus-hero"><span class="eyebrow">YOUR NEET PREPARATION, WITHOUT THE NOISE</span><h1 id="greetingTitle">One focused step at a time.</h1><p id="dailyQuote">Analyse. Practise. Learn from every mistake.</p></div>
+  <div class="focus-grid">
+   <button id="startBtn" class="focus-tile focus-analysis"><span class="focus-icon">↗</span><strong>Test Analysis</strong><small>Record your answers and find where marks are being lost.</small><b>Start analysis →</b></button>
+   <button class="focus-tile" data-screen="practice"><span class="focus-icon">✎</span><strong>Practice</strong><small>Turn your question PDFs into focused practice or timed tests.</small><b>Open practice →</b></button>
+   <button class="focus-tile" data-screen="mistakeNotebook"><span class="focus-icon">▤</span><strong>Mistake Notebook</strong><small>Keep every important mistake, solution and personal explanation.</small><b>Review mistakes →</b></button>
+   <button class="focus-tile" data-screen="history"><span class="focus-icon">▥</span><strong>Test Records</strong><small>Review past analyses and track your score trend.</small><b>View test analysis →</b></button>
   </div>
+  <div id="resumeTestCard" class="resume-test-card hidden"></div>
+  <div class="neet-countdown-card focus-countdown"><div><span class="eyebrow">🩺 NEET 2027 COUNTDOWN</span><strong id="neetCountdown">Loading…</strong><small id="neetCountdownNote">Every focused day counts.</small></div><span class="countdown-mark">⏳</span></div>
+ </div>
 </section>
-
 <section id="practiceScreen" class="screen">
-  <div class="page-head"><div><span class="eyebrow">PRACTICE</span><h2>Practice by subject.</h2><div class="small-muted">Physics, Chemistry, Botany and Zoology practice. Uploaded assignments stay on this device.</div></div></div>
-  <div class="practice-subject-tabs" id="practiceSubjectTabs"></div>
-  <div id="practiceSubjectPanel"></div>
+ <div class="page-head"><div><span class="eyebrow">CORE TOOL 02</span><h2>Practice with purpose.</h2><div class="small-muted">Choose a subject, upload a question PDF and select Practice Mode or Test Mode each time.</div></div></div>
+ <div class="practice-subject-tabs" id="practiceSubjectTabs"></div><div id="practiceSubjectPanel"></div>
 </section>
-
-<section id="reportsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">REPORTS</span><h2>Your long-term performance.</h2></div></div><div id="reportsContent"></div></section>
-<section id="plannerScreen" class="screen"><div class="page-head"><div><span class="eyebrow">NEET 2027</span><h2>NEET Success Planner</h2><div class="small-muted">Plan your study, revision and chapter mastery across all four subjects.</div></div></div><div id="plannerContent"></div></section>
-<section id="todoScreen" class="screen"><div class="page-head"><div><span class="eyebrow">DAILY PLANNER</span><h2>Today's To-Do</h2><div class="small-muted">Create, complete and manage your daily study tasks.</div></div></div><div id="todoContent"></div></section>
-
-<section id="historyScreen" class="screen"><div class="page-head"><div><span class="eyebrow">YOUR RECORD</span><h2>Test History</h2></div><div><button id="clearHistoryBtn" class="danger">Clear History</button> <button id="historyNewBtn" class="primary">New Test</button></div></div><div id="historyList"></div></section>
-
+<section id="reportsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">TEST ANALYSIS</span><h2>Your performance.</h2></div></div><div id="reportsContent"></div></section>
+<section id="historyScreen" class="screen"><div class="page-head"><div><span class="eyebrow">TEST ANALYSIS</span><h2>Test history</h2><div><button id="clearHistoryBtn" class="danger">Clear history</button> <button id="historyNewBtn" class="primary">New analysis</button></div></div></div><div id="historyList"></div></section>
 <section id="aboutScreen" class="screen">
-  <div class="page-head"><div><span class="eyebrow">STEP 1</span><h2>About the Test</h2></div><span class="pill">1 / 3</span></div>
-  <form id="aboutForm" class="panel">
-    <div class="field"><label>Test Type</label><select id="testType" required><option value="">Select test type</option><option>Part Test</option><option>Mock Test</option><option>Full Syllabus</option><option>Chapter-wise</option><option>Subject-wise</option></select></div>
-    <div class="field"><label>Test Name / Number</label><input id="testName" required placeholder="e.g. Practice Test 03"></div>
-    <div id="syllabusArea"></div>
-    <div class="field"><label>Revised before test?</label><div class="segmented"><label><input type="radio" name="revised" value="Yes" required> Yes</label><label><input type="radio" name="revised" value="No"> No</label></div></div>
-    <div class="field"><label>Do you want to upload the test paper PDF?</label><div class="segmented"><label><input type="radio" name="usePdf" value="Yes" required> Yes</label><label><input type="radio" name="usePdf" value="No"> No</label></div></div>
-    <div id="pdfChoiceArea"></div>
-    <div class="actions"><button type="button" class="secondary" data-screen="home">Cancel</button><button class="primary">Continue to Analysis →</button></div>
-  </form>
+ <div class="page-head"><div><span class="eyebrow">TEST ANALYSIS • STEP 1</span><h2>About your test</h2></div><span class="pill">1 / 3</span></div>
+ <form id="aboutForm" class="panel">
+  <div class="field"><label>Test type</label><select id="testType" required><option value="">Select test type</option><option>Part Test</option><option>Mock Test</option><option>Full Syllabus</option><option>Chapter-wise</option><option>Subject-wise</option></select></div>
+  <div class="field"><label>Test name / number</label><input id="testName" required placeholder="e.g. Practice Test 03"></div>
+  <div id="syllabusArea"></div>
+  <div class="field"><label>Revised before test?</label><div class="segmented"><label><input type="radio" name="revised" value="Yes" required> Yes</label><label><input type="radio" name="revised" value="No"> No</label></div></div>
+  <div class="field"><label>Upload test paper PDF?</label><div class="segmented"><label><input type="radio" name="usePdf" value="Yes" required> Yes</label><label><input type="radio" name="usePdf" value="No"> No</label></div></div>
+  <div id="pdfChoiceArea"></div><div class="actions"><button type="button" class="secondary" data-screen="home">Cancel</button><button class="primary">Continue →</button></div>
+ </form>
 </section>
-
 <section id="analysisScreen" class="screen">
-  <div class="analysis-top"><div><span class="eyebrow" id="sectionLabel">PHYSICS</span><h2 id="questionTitle">Question 1 / 180</h2></div><div class="analysis-actions"><button id="leaveTestBtn" class="secondary" type="button">↩ Leave Test</button><button id="navigatorBtn" class="secondary">▦ Question Map</button></div></div>
-  <div class="progress-wrap"><div class="progress-bar"><div id="progressFill"></div></div><span id="progressText">1 / 180</span></div>
-  <div class="question-card"><div id="questionViewer" class="question-viewer"></div><div class="answer-dock"><span class="dock-label">HOW DID YOU DO?</span><div class="status-options"><label><input type="radio" name="status" value="Correct"><span class="correct">✓<b>Correct</b></span></label><label><input type="radio" name="status" value="Incorrect"><span class="incorrect">×<b>Incorrect</b></span></label><label><input type="radio" name="status" value="Skipped"><span class="skipped">−<b>Skipped</b></span></label></div><div id="questionExtra"></div><div class="actions between"><button id="prevBtn" class="secondary">← Previous</button><button id="nextBtn" class="primary">Next →</button></div></div></div>
+ <div class="analysis-top"><div><span class="eyebrow" id="sectionLabel">PHYSICS</span><h2 id="questionTitle">Question 1 / 180</h2></div><div class="analysis-actions"><button id="leaveTestBtn" class="secondary" type="button">↩ Leave</button><button id="navigatorBtn" class="secondary">▦ Question Map</button></div></div>
+ <div class="progress-wrap"><div class="progress-bar"><div id="progressFill"></div></div><span id="progressText">1 / 180</span></div>
+ <div class="question-card"><div id="questionViewer" class="question-viewer"></div><div class="answer-dock"><span class="dock-label">HOW DID YOU DO?</span><div class="status-options"><label><input type="radio" name="status" value="Correct"><span class="correct">✓<b>Correct</b></span></label><label><input type="radio" name="status" value="Incorrect"><span class="incorrect">×<b>Incorrect</b></span></label><label><input type="radio" name="status" value="Skipped"><span class="skipped">−<b>Skipped</b></span></label></div><div id="questionExtra"></div><div class="actions between"><button id="prevBtn" class="secondary">← Previous</button><button id="nextBtn" class="primary">Next →</button></div></div></div>
 </section>
-
-<section id="summaryScreen" class="screen"><div class="page-head"><div><span class="eyebrow">READY TO SUBMIT</span><h2>Final Check</h2></div><span class="pill">3 / 3</span></div><div id="summaryContent"></div></section>
+<section id="summaryScreen" class="screen"><div class="page-head"><div><span class="eyebrow">READY TO SUBMIT</span><h2>Final check</h2></div><span class="pill">3 / 3</span></div><div id="summaryContent"></div></section>
 <section id="resultScreen" class="screen"><div id="resultContent"></div></section>
-<section id="daySummaryScreen" class="screen"><div class="page-head"><div><span class="eyebrow">DAILY RECORD</span><h2>Day Summary</h2><div class="small-muted">Record what you actually studied today.</div></div></div><div id="daySummaryContent"></div></section>
-<section id="mistakeNotebookScreen" class="screen"><div class="page-head"><div><span class="eyebrow">MISTAKE NOTEBOOK</span><h2>Your Mistakes</h2><div class="small-muted">Exact questions from your saved test PDFs, with the topic you recorded.</div></div></div><div id="mistakeNotebookContent"></div></section>
-<section id="nextTestScreen" class="screen"><div class="page-head"><div><span class="eyebrow">NEXT TEST PREPARATION</span><h2>Next Test Syllabus & Preparation</h2><div class="small-muted">Set the test date/time and syllabus. StudyMate uses your recorded performance to highlight what needs attention.</div></div></div><div id="nextTestContent"></div></section>
-<section id="settingsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">SETTINGS</span><h2>Settings</h2></div></div><div id="settingsContent"></div></section>
-<section id="ncertScreen" class="screen"><div class="page-head"><div><span class="eyebrow">NCERT</span><h2>NCERT Focus Mode</h2><div class="small-muted">Track your NCERT reading and revision without reproducing the book.</div></div></div><div id="ncertContent"></div></section>
-<section id="goalsScreen" class="screen"><div class="page-head"><div><span class="eyebrow">DAILY GOALS</span><h2>Daily Goals</h2><div class="small-muted">Set today's targets and compare them with your Day Summary.</div></div></div><div id="goalsContent"></div></section>
-<section id="comparisonScreen" class="screen"><div class="page-head"><div><span class="eyebrow">COMPARE</span><h2>Test Comparison</h2><div class="small-muted">See how one test changed from another.</div></div></div><div id="comparisonContent"></div></section>
-<section id="revisionScreen" class="screen"><div class="page-head"><div><span class="eyebrow">REVISION</span><h2>Intelligent Revision</h2><div class="small-muted">Revision priorities based on your recorded planner milestones.</div></div></div><div id="revisionContent"></div></section>
-<section id="weaknessScreen" class="screen"><div class="page-head"><div><span class="eyebrow">WEAKNESS ENGINE</span><h2>Smart Weakness Engine</h2><div class="small-muted">Rank topics using your real mistake data.</div></div></div><div id="weaknessContent"></div></section>
-<section id="studymateScreen" class="screen"><div class="page-head"><div><span class="eyebrow">PERSONAL STUDYMATE</span><h2>Personal NEET StudyMate</h2><div class="small-muted">Your next actions from the data you record.</div></div></div><div id="studymateContent"></div></section>
+<section id="mistakeNotebookScreen" class="screen"><div class="page-head"><div><span class="eyebrow">CORE TOOL 03</span><h2>Your mistake notebook</h2><div class="small-muted">Subject-wise mistakes, source solutions and your own explanations.</div></div></div><div id="mistakeNotebookContent"></div></section>
 </main>
-
-<div id="navigatorModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">NAVIGATE</span><h3>Question Map</h3></div><button class="icon-btn" id="closeNavigator">×</button></div><div id="questionGrid" class="question-grid"></div></div></div>
-<div id="mockModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">PRACTICE BUILDER</span><h3>Generate Mock Test</h3></div><button class="icon-btn close-modal">×</button></div><div id="mockBuilder"></div></div></div>
-<div id="pdfQuizModal" class="modal hidden"><div class="modal-card large-modal"><div class="modal-head"><div><span class="eyebrow">INTERACTIVE QUIZ</span><h3>Upload Question PDF</h3></div><button class="icon-btn close-modal">×</button></div><div id="pdfQuizBuilder"></div></div></div>
-<div id="assignmentUploadModal" class="modal hidden"><div class="modal-card large-modal"><div class="modal-head"><div><span class="eyebrow">SUBJECT PRACTICE</span><h3>Upload Practice Assignment</h3></div><button class="icon-btn close-modal">×</button></div><div id="assignmentUploadBuilder"></div></div></div>
-<div id="moreModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">MORE</span><h3>StudyMate Tools</h3></div><button class="icon-btn close-modal">×</button></div><div class="more-menu-grid">
-<button data-screen="practice">📚<strong>Practice</strong><small>Mock tests & PDF quiz</small></button><button data-screen="mistakeNotebook">📓<strong>Mistake Notebook</strong><small>Review mistakes & redo</small></button><button data-screen="planner">🎯<strong>Success Planner</strong><small>Study & revision milestones</small></button><button data-screen="daySummary">📋<strong>Day Summary</strong><small>Today's work</small></button><button data-screen="ncert">📖<strong>NCERT Focus Mode</strong><small>Reading & revision tracker</small></button><button data-screen="goals">🎯<strong>Daily Goals</strong><small>Daily targets</small></button><button data-screen="comparison">⚔️<strong>Test Comparison</strong><small>Compare performance</small></button><button data-screen="revision">🧠<strong>Intelligent Revision</strong><small>Spaced revision</small></button><button data-screen="weakness">🔥<strong>Smart Weakness Engine</strong><small>Find priorities</small></button><button data-screen="studymate">🤖<strong>Personal NEET StudyMate</strong><small>What should I do now?</small></button><button data-screen="settings">⚙️<strong>Settings</strong><small>Security, backup & theme</small></button>
-</div></div></div>
-<input id="restoreFileInput" type="file" accept=".smbackup,application/json" hidden>
+<div id="navigatorModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">NAVIGATE</span><h3>Question map</h3></div><button class="icon-btn" id="closeNavigator">×</button></div><div id="questionGrid" class="question-grid"></div></div></div>
+<div id="mockModal" class="modal hidden"><div class="modal-card"><div class="modal-head"><div><span class="eyebrow">PRACTICE BUILDER</span><h3>Generate mock test</h3></div><button class="icon-btn close-modal">×</button></div><div id="mockBuilder"></div></div></div>
+<div id="pdfQuizModal" class="modal hidden"><div class="modal-card large-modal"><div class="modal-head"><div><span class="eyebrow">PDF PRACTICE</span><h3>Upload question PDF</h3></div><button class="icon-btn close-modal">×</button></div><div id="pdfQuizBuilder"></div></div></div>
+<div id="assignmentUploadModal" class="modal hidden"><div class="modal-card large-modal"><div class="modal-head"><div><span class="eyebrow">SUBJECT PRACTICE</span><h3>Upload assignment</h3></div><button class="icon-btn close-modal">×</button></div><div id="assignmentUploadBuilder"></div></div></div>
+<div id="nameModal" class="modal hidden"><div class="modal-card name-card"><div class="name-welcome">👋</div><h3>Welcome to StudyMate</h3><p class="small-muted">What should we call you?</p><input id="nameInput" type="text" maxlength="32" placeholder="Enter your name" autocomplete="name"><div class="actions"><button id="saveNameBtn" class="primary">Continue →</button></div></div></div>
 <div id="lockScreen" class="lock-screen hidden"><div class="lock-card"><div class="lock-logo">🔐</div><h2>StudyMate is Locked</h2><p>Enter your passcode to continue.</p><div id="lockBody"></div></div></div>
-
-<div id="motivationModal" class="modal hidden"><div class="modal-card motivation-card"><div class="modal-head"><div><span class="eyebrow">NEET 2027</span><h3>Keep Going 💙</h3></div><button class="icon-btn close-modal">×</button></div><div id="motivationContent"></div><div class="actions"><button class="primary" id="anotherMotivation">Another message ✨</button></div></div></div>
-<div id="nameModal" class="modal hidden"><div class="modal-card name-card"><div class="name-welcome">👋</div><h3>Welcome to StudyMate!</h3><p class="small-muted">What should we call you?</p><input id="nameInput" type="text" maxlength="32" placeholder="Enter your name" autocomplete="name"><div class="actions"><button id="saveNameBtn" class="primary">Continue →</button></div></div></div>
-<nav class="mobile-bottom-nav" id="mobileBottomNav"><button class="active" data-screen="home">⌂<span>Home</span></button><button data-screen="history">◷<span>History</span></button><button data-screen="reports">▥<span>Reports</span></button><button data-screen="settings">⚙<span>Settings</span></button></nav>
+<input id="restoreFileInput" type="file" accept=".smbackup,application/json" hidden>
 <div id="toast" class="toast"></div>
+<nav class="mobile-bottom-nav focused-nav" id="mobileBottomNav">
+ <button class="active" data-screen="home">⌂<span>Home</span></button><button data-screen="history">▥<span>History</span></button><button data-screen="practice">✎<span>Practice</span></button><button data-screen="mistakeNotebook">▤<span>Notebook</span></button>
+</nav>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';}</script>
-<script src="app.js?v=final58"></script>
+<script src="app.js?v=focused1"></script>
 </body>
 </html>
