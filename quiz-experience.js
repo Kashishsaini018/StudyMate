@@ -271,7 +271,7 @@ startPairedNeetTest=async function(){
   const missingSolutions=nums.filter(n=>!parsed.solutionMap.has(n));
   if(missingSolutions.length)throw new Error('Solution matching is incomplete. Missing: '+missingSolutions.slice(0,15).map(n=>'Q'+n).join(', ')+'.');
   const qId=uid(),sId=uid();await savePdfBlob(qId,qFile);await savePdfBlob(sId,sFile);
-  state.test={id:uid(),name:$('neetTestName')?.value.trim()||qFile.name.replace(/\.pdf$/i,''),type:'Full Syllabus',syllabus:'Complete NEET syllabus · Physics, Chemistry, Botany and Zoology',revised:'Not specified',date:new Date().toISOString(),fileName:qFile.name,hasPdf:true,solutionPdfId:sId};
+  state.test={id:qId,name:$('neetTestName')?.value.trim()||qFile.name.replace(/\.pdf$/i,''),type:'Full Syllabus',syllabus:'Complete NEET syllabus · Physics, Chemistry, Botany and Zoology',revised:'Not specified',date:new Date().toISOString(),fileName:qFile.name,hasPdf:true,solutionPdfId:sId};
   state.pdfFile=qFile;state.pdf=qPdf;state.questionMap=qMap;state.detectedCount=180;state.current=0;
   state.questions=nums.map(n=>{
    const subject=n<=45?'Physics':n<=90?'Chemistry':n<=135?'Botany':'Zoology';
