@@ -19,6 +19,7 @@ html{scroll-behavior:smooth}
 body{background:radial-gradient(ellipse at 12% 0%,rgba(99,102,241,.055),transparent 34%),var(--bg);color:var(--text);font-size:14px;line-height:1.5}
 ::selection{background:rgba(99,102,241,.18)}
 .topbar{height:72px;background:rgba(255,255,255,.88);border-bottom:1px solid rgba(226,232,240,.85);box-shadow:0 4px 18px rgba(23,36,59,.035)}
+.brand-wrap{border:0;background:transparent;padding:0;color:inherit;text-align:left;cursor:pointer;appearance:none}
 .brand-logo{width:40px;height:40px}
 .brand{font-size:21px;letter-spacing:-.7px}
 .brand-subtitle{font-size:10px;letter-spacing:.9px;font-weight:750}
