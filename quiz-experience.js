@@ -8,7 +8,7 @@ let analysisKey=null;
 /* Compact PDF library rows: title/chapter, tiny metadata, one Start/Continue action. */
 practiceAssignmentCard=function(a){
  const attempts=getPracticeAttempts().filter(x=>x.assignmentId===a.id),done=new Set(attempts.map(x=>x.question)).size;
- return '<article class="practice-pdf-row"><div class="practice-pdf-main"><strong>'+esc(a.chapter||a.title)+'</strong><small>'+esc(a.subject||'')+' · '+(a.totalQuestions||a.questions.length)+' questions'+(done?' · '+done+' attempted':'')+'</small></div><button type="button" class="practice-pdf-start" data-assignment-start="'+esc(a.id)+'">'+(done?'Continue':'Start')+' →</button></article>';
+ return '<article class="practice-pdf-row"><button type="button" class="practice-pdf-main" data-assignment-start="'+esc(a.id)+'"><strong>'+esc(a.chapter||a.title)+'</strong><small>'+esc(a.subject||'')+' · '+(a.totalQuestions||a.questions.length)+' questions'+(done?' · '+done+' attempted':'')+'</small></button><button type="button" class="practice-pdf-start" data-assignment-start="'+esc(a.id)+'">'+(done?'Continue':'Start')+' →</button></article>';
 };
 
 /* Option selection updates only the selected state; it does not rebuild the page or PDF canvas. */
