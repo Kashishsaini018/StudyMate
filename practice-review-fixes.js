@@ -64,7 +64,7 @@
     const questions = assignment.questions.map(q => {
       const attempt = latest[q.number] || null;
       return {
-        ...q, number:q.number, pdf:null, assignmentId:id,
+        ...q, number:q.number, pdf:null, questionType:q.info?.questionType || 'mcq', assignmentId:id,
         practicePdfId:assignment.pdfId, chapter:assignment.chapter,
         s:assignment.subject, c:assignment.chapter,
         status:attempt?.status || 'Unattempted',
