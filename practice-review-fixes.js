@@ -164,12 +164,18 @@
   async function openAssignmentSolutions() {
     const review = window.__studyMateAssignmentReview;
     if (!review) return;
-    let pdf = null;
+    let pdf = null, solutionPdf = null;
     try {
       const blob = await getPracticePdfBlob(review.assignment.pdfId);
       if (blob && pdfjsLib) pdf = await pdfjsLib.getDocument({data:await blob.arrayBuffer()}).promise;
     } catch (error) { console.warn('Could not reopen assignment PDF', error); }
-    review.questions.forEach(q => { q.pdf = pdf; });
+    if (review.assignment.solutionPdfId) {
+      try {
+        const solutionBlob = await getPracticePdfBlob(review.assignment.solutionPdfId);
+        if (solutionBlob && pdfjsLib) solutionPdf = await pdfjsLib.getDocument({data:await solutionBlob.arrayBuffer()}).promise;
+      } catch (error) { console.warn('Could not reopen separate solution PDF', error); }
+    }
+    review.questions.forEach(q => { q.pdf = pdf; q.solutionPdf = solutionPdf; });
     drawSolutions('All', review.questions[0]?.number);
   }
 
@@ -261,7 +267,7 @@
     if (q.pdf && q.info) renderPdfInfoToElement(q.pdf, q.info, $('reviewQuestionPdf'), 1.25)
       .catch(error => { console.warn(error); $('reviewQuestionPdf').textContent = 'Could not load this question.'; });
     else $('reviewQuestionPdf').textContent = 'Question preview is unavailable.';
-    if (q.pdf && q.solutionInfo) renderPdfInfoToElement(q.pdf, q.solutionInfo, $('reviewSolutionPdf'), 1.2)
+    if ((q.solutionPdf || q.pdf) && q.solutionInfo) renderPdfInfoToElement(q.solutionPdf || q.pdf, q.solutionInfo, $('reviewSolutionPdf'), 1.2)
       .catch(error => { console.warn(error); $('reviewSolutionPdf').textContent = 'Could not load the source solution.'; });
     else $('reviewSolutionPdf').innerHTML = '<div class="viewer-placeholder">No separate solution was detected in the uploaded PDF.</div>';
   }
