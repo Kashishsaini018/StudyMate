@@ -212,7 +212,7 @@
         '<span><small>Your answer</small><b>' + esc(user) + '</b></span><span><small>Correct answer</small><b>' + esc(correct) + '</b></span></div>' +
         '<section class="dpp-source-solution"><h3>Solution</h3><div id="reviewSolutionPdf"><div class="viewer-placeholder">Loading source solution…</div></div></section>' +
         ((q.status === 'Incorrect' || q.status === 'Skipped')
-          ? '<section class="dpp-my-explanation"><h3>My Explanation</h3><textarea id="reviewMyExplanation" rows="4" placeholder="Write your own explanation or reminder for this question…"></textarea><button type="button" class="primary" id="saveReviewExplanation">Save to Mistake Notebook</button></section>'
+          ? '<section class="dpp-my-explanation"><h3>My Explanation</h3><button type="button" class="secondary" id="addReviewMistake">＋ Add to Mistake Notebook</button><textarea id="reviewMyExplanation" rows="4" placeholder="Write your own explanation or reminder for this question…"></textarea><button type="button" class="primary" id="saveReviewExplanation">Save My Explanation</button></section>'
           : '') +
         '<div class="dpp-bottom"><button type="button" class="secondary" id="reviewPrev">← Previous</button>' +
         '<button type="button" class="primary" id="reviewNext">Next →</button></div></div>';
@@ -228,6 +228,19 @@
       const index = visible.findIndex(x => x.number === q.number);
       if (index < visible.length - 1) drawSolutions(filter, visible[index + 1].number);
     };
+    $('addReviewMistake')?.addEventListener('click', () => {
+      try {
+        const entry = addMistakeNotebookEntry({
+          question:{...q, pdf:null, practicePdfId:review.assignment.pdfId, reason:q.status === 'Skipped' ? 'Skipped question' : 'Incorrect answer'},
+          record:{id:review.assignment.id,name:review.assignment.title,hasPdf:true},
+          source:'Practice PDF Review'
+        });
+        const button = $('addReviewMistake');
+        button.disabled = true;
+        button.textContent = '✓ Added to Mistake Notebook';
+        toast('Question added to Mistake Notebook.');
+      } catch (error) { console.error(error); alert('Could not add this question to Mistake Notebook.'); }
+    });
     $('saveReviewExplanation')?.addEventListener('click', () => {
       const explanation = $('reviewMyExplanation').value.trim();
       if (!explanation) return alert('Write your explanation first.');
