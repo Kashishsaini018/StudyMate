@@ -148,7 +148,7 @@
       }));
       state.practiceQuiz = {
         title:assignment.title, questions, index:0, answers:{}, checkedAnswers:{},
-        startedAt:Date.now(), mode, assignmentMode:true, assignmentId:id,
+        startedAt:Date.now(), mode:mode || assignment.mode || 'test', assignmentMode:true, assignmentId:id,
         assignment, answersStatus:{}, bookmarks:new Set()
       };
       localStorage.removeItem(PROGRESS_KEY);
@@ -252,6 +252,33 @@
       .catch(error => { console.warn(error); $('reviewSolutionPdf').textContent = 'Could not load the source solution.'; });
     else $('reviewSolutionPdf').innerHTML = '<div class="viewer-placeholder">No separate solution was detected in the uploaded PDF.</div>';
   }
+
+
+  // After a submission, persist the attempt and land on the analysis dashboard (never the last question).
+  finishAssignmentQuiz = async function () {
+    const d = state.practiceQuiz;
+    if (!d?.assignmentMode) return;
+    const unanswered = d.questions.filter(q => d.answers[q.number] === undefined).length;
+    if (unanswered && !confirm(unanswered + ' question(s) are still unanswered. Submit this test anyway?')) return;
+    const attempts = getPracticeAttempts();
+    d.questions.forEach(q => {
+      const user = d.answers[q.number] === undefined ? null : d.answers[q.number];
+      const hasKey = q.answerKey !== undefined && q.answerKey !== null;
+      const status = user === null ? 'Skipped' : !hasKey ? 'Answered' :
+        (q.info.questionType === 'numeric' ? numericEqual(user,q.answerKey) : Number(user) === Number(q.answerKey)) ? 'Correct' : 'Incorrect';
+      attempts.unshift({
+        id:uid(), assignmentId:d.assignmentId, question:q.number, status,
+        response:user, hasKey, correct:hasKey ? q.answerKey : null,
+        responseLabel:user == null ? '—' : q.info.questionType === 'numeric' ? String(user) : String.fromCharCode(65+Number(user)),
+        correctLabel:hasKey ? (q.info.questionType === 'numeric' ? String(q.answerKey) : String.fromCharCode(65+Number(q.answerKey))) : '',
+        date:new Date().toISOString()
+      });
+    });
+    savePracticeAttempts(attempts);
+    localStorage.removeItem(PROGRESS_KEY);
+    state.practiceQuiz = null;
+    await openAssignmentAnalysis(d.assignmentId);
+  };
 
   // Small mobile-first styles for the summary and mode picker, without disturbing the app theme.
   const style = document.createElement('style');
