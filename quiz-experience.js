@@ -221,3 +221,64 @@ if(results&&!results.dataset.myExplanationBound){
 const oldAssignmentUpload=renderAssignmentUpload;
 renderAssignmentUpload=function(){oldAssignmentUpload();document.querySelectorAll('input[name="assignmentQuizMode"]').forEach(x=>x.checked=false);};
 })();
+
+/* The paired 180-question paper belongs to Test Analysis, not Practice Quiz. */
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+const originalLanding=renderPracticeLanding;
+renderPracticeLanding=function(subject){
+ originalLanding(subject);
+ $('openNeetPairImport')?.remove();
+};
+function addFullTestAnalysisButton(){
+ const head=document.querySelector('#aboutScreen .page-head');
+ if(!head||$('openFullTestAnalysisImport'))return;
+ const btn=document.createElement('button');
+ btn.type='button';btn.id='openFullTestAnalysisImport';btn.className='secondary';
+ btn.textContent='＋ Import 180-question NEET test';
+ btn.addEventListener('click',()=>openModal('pdfQuizModal',renderPairedNeetTestBuilder));
+ head.appendChild(btn);
+}
+addFullTestAnalysisButton();
+new MutationObserver(()=>addFullTestAnalysisButton()).observe($('aboutScreen'),{childList:true,subtree:true});
+
+renderPairedNeetTestBuilder=function(){
+ const b=$('pdfQuizBuilder');if(!b)return;
+ b.innerHTML='<div class="eyebrow">NEET FULL TEST · TEST ANALYSIS</div>'+
+ '<p class="small-muted">Upload the question paper and matching hints / solutions PDF. StudyMate will check the answer key and open the 180-question paper in Test Analysis. You will select your own answers; the app grades them after submission.</p>'+
+ '<div class="field"><label>Question paper PDF</label><input id="neetQuestionPdf" type="file" accept="application/pdf"></div>'+
+ '<div class="field"><label>Hints and solutions / answer key PDF</label><input id="neetSolutionPdf" type="file" accept="application/pdf"></div>'+
+ '<div class="field"><label>Test name</label><input id="neetTestName" value="NEET Full Test (180 Questions)" maxlength="100"></div>'+
+ '<div class="actions"><button class="primary" type="button" id="startPairedNeetTest">Analyze PDFs & Start Test Analysis →</button></div>'+
+ '<p class="small-muted">NEET marking: +4 correct, −1 incorrect, 0 unanswered. Subject ranges: Physics 1–45, Chemistry 46–90, Botany 91–135, Zoology 136–180.</p>';
+ $('startPairedNeetTest').onclick=startPairedNeetTest;
+};
+startPairedNeetTest=async function(){
+ const qFile=$('neetQuestionPdf')?.files?.[0],sFile=$('neetSolutionPdf')?.files?.[0];
+ if(!qFile||!sFile)return alert('Choose both the question paper and matching solutions PDF.');
+ if(!pdfjsLib)return alert('PDF engine unavailable. Reload StudyMate and try again.');
+ const btn=$('startPairedNeetTest');btn.disabled=true;btn.textContent='Analyzing both PDFs…';
+ try{
+  const qPdf=await pdfjsLib.getDocument({data:await qFile.arrayBuffer()}).promise;
+  const sPdf=await pdfjsLib.getDocument({data:await sFile.arrayBuffer()}).promise;
+  const qMap=await extractPdfMap(qPdf),nums=Array.from({length:180},(_,i)=>i+1);
+  const missing=nums.filter(n=>!qMap.has(n));
+  if(missing.length)throw new Error('Question paper check failed. Missing question labels: '+missing.slice(0,15).map(n=>'Q'+n).join(', ')+'.');
+  const parsed=await extractPairedSolutionData(sPdf);
+  const missingKey=nums.filter(n=>!parsed.answerKey[n]||parsed.answerKey[n].value==null);
+  if(missingKey.length)throw new Error('Answer key is incomplete. Missing: '+missingKey.slice(0,15).map(n=>'Q'+n).join(', ')+'.');
+  const missingSolutions=nums.filter(n=>!parsed.solutionMap.has(n));
+  if(missingSolutions.length)throw new Error('Solution matching is incomplete. Missing: '+missingSolutions.slice(0,15).map(n=>'Q'+n).join(', ')+'.');
+  const qId=uid(),sId=uid();await savePdfBlob(qId,qFile);await savePdfBlob(sId,sFile);
+  state.test={id:uid(),name:$('neetTestName')?.value.trim()||qFile.name.replace(/\.pdf$/i,''),type:'Full Syllabus',syllabus:'Complete NEET syllabus · Physics, Chemistry, Botany and Zoology',revised:'Not specified',date:new Date().toISOString(),fileName:qFile.name,hasPdf:true,solutionPdfId:sId};
+  state.pdfFile=qFile;state.pdf=qPdf;state.questionMap=qMap;state.detectedCount=180;state.current=0;
+  state.questions=nums.map(n=>{
+   const subject=n<=45?'Physics':n<=90?'Chemistry':n<=135?'Botany':'Zoology';
+   return Object.assign(blankQuestion(n),{answerKey:parsed.answerKey[n].value,answerKeyType:parsed.answerKey[n].kind||'letter',userAnswer:undefined,subject,s:subject,c:'Chapter not classified',solutionInfo:parsed.solutionMap.get(n),solutionPdfId:sId,sourcePdfId:qId});
+  });
+  closeModal('pdfQuizModal');saveAnalysisDraft();await renderQuestion();showScreen('analysis');
+ }catch(error){console.error('NEET Test Analysis import failed:',error);alert('StudyMate could not safely start Test Analysis. '+(error.message||'Please check both PDFs.'));}
+ finally{const current=$('startPairedNeetTest');if(current){current.disabled=false;current.textContent='Analyze PDFs & Start Test Analysis →';}}
+};
+})();
