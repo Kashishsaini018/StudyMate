@@ -213,3 +213,35 @@ button:active{transform:scale(.985)}
 .practice-review-item>.solution-preview{width:100%;min-width:0;overflow:hidden;background:var(--surface,#fff);border:1px solid var(--border);border-radius:12px;padding:8px}
 .practice-review-item>.solution-preview canvas{display:block;max-width:100%;height:auto}
 @media(max-width:560px){.practice-review-item{grid-template-columns:minmax(0,1fr) auto}.practice-review-item>.inline-actions button{min-height:40px;padding:9px 11px}}
+
+
+/* Quiz interaction stability + compact PDF list */
+.answer-mode-hidden{display:none!important}
+.analysis-answer-panel{margin-top:14px}
+.analysis-answer-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:10px 0}
+.analysis-answer-grid button{min-height:46px;border:1px solid var(--border);border-radius:12px;background:var(--card);font-weight:800}
+.analysis-answer-grid button.selected,.quiz-options button.selected{border-color:var(--primary);background:#eef0ff;color:var(--primary)}
+.analysis-skip{margin-top:5px}
+.practice-pdf-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);border-radius:13px;padding:9px 11px;margin:7px 0}
+.practice-pdf-main{min-width:0;flex:1;display:flex;flex-direction:column;gap:2px;background:transparent;border:0;text-align:left;padding:2px}
+.practice-pdf-main strong{font-size:13px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.practice-pdf-main small{font-size:10px;color:var(--muted)}
+.practice-pdf-start{flex:0 0 auto;border:0;border-radius:9px;background:var(--primary);color:#fff;font-size:11px;font-weight:750;padding:8px 12px}
+.quiz-head{align-items:center}
+.quiz-question{scroll-margin-top:12px}
+.quiz-options button{min-height:46px;transition:background .12s,border-color .12s}
+.quiz-feedback{padding:10px 12px;border-radius:10px;margin:10px 0;font-size:13px}
+.quiz-feedback.is-correct{background:#eafaf4;color:#087453}
+.quiz-feedback.is-wrong{background:#fff0f4;color:#b62e53}
+.review-explanation{width:100%;padding:10px;border:1px solid var(--border);border-radius:12px;margin-top:8px}
+.review-explanation textarea{width:100%;min-height:72px}
+.review-explanation button{margin-top:6px}
+@media(max-width:600px){
+ .practice-pdf-row{padding:8px 9px;gap:7px}
+ .practice-pdf-main strong{font-size:12px}
+ .practice-pdf-start{padding:7px 9px;font-size:10px}
+ .analysis-answer-grid{gap:7px}
+ .analysis-answer-grid button{min-height:42px}
+ .quiz-options{gap:7px}
+ .quiz-options button{padding:10px;min-height:44px}
+}
