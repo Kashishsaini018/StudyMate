@@ -94,19 +94,19 @@ if(form&&typeof form.onsubmit==='function'){
   analysisKey=key;
   await oldSubmit.call(this,e);
   if(!state.pdf||!state.questions?.length)return;
-  const missing=state.questions.filter(q=>!analysisKey[q.number]);
+  const missing=state.questions.filter(q=>!Object.prototype.hasOwnProperty.call(analysisKey,q.number));
   if(missing.length){
    alert('The answer key is missing '+missing.length+' question(s): '+missing.slice(0,12).map(q=>'Q'+q.number).join(', ')+'. Please use the matching complete key.');
    state.questions=[];state.test=null;state.pdf=null;showScreen('about');return;
   }
-  state.questions.forEach(q=>{q.answerKey=analysisKey[q.number].value;q.answerKeyType=analysisKey[q.number].kind||'letter';q.userAnswer=undefined;q.status='';});
+  state.questions.forEach(q=>{const entry=analysisKey[q.number];q.answerKey=entry&&typeof entry==='object'?entry.value:entry;q.answerKeyType=entry&&typeof entry==='object'?(entry.kind||'letter'):'letter';q.userAnswer=undefined;q.status='';});
   saveAnalysisDraft();await renderQuestion();
  };
 }
 renderQuestion=async function(){
  if(!state.questions?.length)return;
  const q=state.questions[state.current],total=state.questions.length;
- if(analysisKey&&analysisKey[q.number]&&!Object.prototype.hasOwnProperty.call(q,'answerKey')){q.answerKey=analysisKey[q.number].value;q.answerKeyType=analysisKey[q.number].kind||'letter';}
+ if(analysisKey&&Object.prototype.hasOwnProperty.call(analysisKey,q.number)&&!Object.prototype.hasOwnProperty.call(q,'answerKey')){const entry=analysisKey[q.number];q.answerKey=entry&&typeof entry==='object'?entry.value:entry;q.answerKeyType=entry&&typeof entry==='object'?(entry.kind||'letter'):'letter';}
  $('questionTitle').textContent='Question '+q.number+' / '+total;
  $('sectionLabel').textContent=sectionFor(q.number,total);
  $('progressText').textContent=(state.current+1)+' / '+total;
@@ -266,7 +266,7 @@ startPairedNeetTest=async function(){
   const missing=nums.filter(n=>!qMap.has(n));
   if(missing.length)throw new Error('Question paper check failed. Missing question labels: '+missing.slice(0,15).map(n=>'Q'+n).join(', ')+'.');
   const parsed=await extractPairedSolutionData(sPdf);
-  const missingKey=nums.filter(n=>!parsed.answerKey[n]||parsed.answerKey[n].value==null);
+  const missingKey=nums.filter(n=>!Object.prototype.hasOwnProperty.call(parsed.answerKey,n)||!Number.isInteger(parsed.answerKey[n]));
   if(missingKey.length)throw new Error('Answer key is incomplete. Missing: '+missingKey.slice(0,15).map(n=>'Q'+n).join(', ')+'.');
   const missingSolutions=nums.filter(n=>!parsed.solutionMap.has(n));
   if(missingSolutions.length)throw new Error('Solution matching is incomplete. Missing: '+missingSolutions.slice(0,15).map(n=>'Q'+n).join(', ')+'.');
@@ -275,7 +275,7 @@ startPairedNeetTest=async function(){
   state.pdfFile=qFile;state.pdf=qPdf;state.questionMap=qMap;state.detectedCount=180;state.current=0;
   state.questions=nums.map(n=>{
    const subject=n<=45?'Physics':n<=90?'Chemistry':n<=135?'Botany':'Zoology';
-   return Object.assign(blankQuestion(n),{answerKey:parsed.answerKey[n].value,answerKeyType:parsed.answerKey[n].kind||'letter',userAnswer:undefined,subject,s:subject,c:'Chapter not classified',solutionInfo:parsed.solutionMap.get(n),solutionPdfId:sId,sourcePdfId:qId});
+   return Object.assign(blankQuestion(n),{answerKey:parsed.answerKey[n],answerKeyType:'letter',userAnswer:undefined,subject,s:subject,c:'Chapter not classified',solutionInfo:parsed.solutionMap.get(n),solutionPdfId:sId,sourcePdfId:qId});
   });
   closeModal('pdfQuizModal');saveAnalysisDraft();await renderQuestion();showScreen('analysis');
  }catch(error){console.error('NEET Test Analysis import failed:',error);alert('StudyMate could not safely start Test Analysis. '+(error.message||'Please check both PDFs.'));}
