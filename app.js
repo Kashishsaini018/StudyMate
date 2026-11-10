@@ -777,7 +777,7 @@ function showScreen(name){
   if(name==='history')renderHistory();
   if(name==='reports')renderReports();
   if(name==='mistakeNotebook')renderMistakeNotebook();
-  if(name==='mistakeNotebookEditor')renderMistakeAnalysis();
+  if(name==='mistakeNotebookEditor')renderSavedMistakesEditor();
   if(name==='practice'&&!state.practiceQuiz)renderPracticeLanding();
 }
 
