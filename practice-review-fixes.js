@@ -238,7 +238,7 @@
       try {
         const entry = addMistakeNotebookEntry({
           question:{...q, pdf:null, practicePdfId:review.assignment.pdfId, reason:q.status === 'Skipped' ? 'Skipped question' : 'Incorrect answer'},
-          record:{id:review.assignment.id,name:review.assignment.title,hasPdf:true},
+          record:{id:review.assignment.id,name:review.assignment.title,hasPdf:true,solutionPdfId:review.assignment.solutionPdfId||''},
           source:'Practice PDF Review'
         });
         const button = $('addReviewMistake');
@@ -253,7 +253,7 @@
       try {
         const entry = addMistakeNotebookEntry({
           question:{...q, reason:q.status === 'Skipped' ? 'Skipped question' : 'Incorrect answer'},
-          record:{id:review.assignment.id,name:review.assignment.title},
+          record:{id:review.assignment.id,name:review.assignment.title,solutionPdfId:review.assignment.solutionPdfId||''},
           source:'Practice PDF Review'
         });
         entry.myExplanation = explanation;

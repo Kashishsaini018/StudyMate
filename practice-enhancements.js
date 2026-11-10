@@ -192,6 +192,6 @@
   };
 
   const style=document.createElement('style');
-  style.textContent='.practice-remove-pdf{margin:8px 0 4px;width:100%;border-color:var(--red,#b44);color:var(--red,#d66)}';
+  style.textContent='.practice-remove-pdf{flex:0 0 auto;width:auto;min-height:32px;margin:0;padding:7px 10px;font-size:11px;line-height:1.2;white-space:nowrap;border-color:var(--red,#b44);color:var(--red,#d66)}@media(max-width:600px){.practice-remove-pdf{padding:6px 8px;font-size:10px;min-height:30px}}';
   document.head.appendChild(style);
 })();
